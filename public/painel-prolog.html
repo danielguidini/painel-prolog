@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #0d0d1a; color: #e8eaf6; font-family: 'Segoe UI', -apple-system, sans-serif; overflow: hidden; }
+  
+  /* Estrutura principal da tela ocupando 100% com espaçamento proporcional */
+  .tv { width: 100vw; height: 100vh; display: grid; grid-template-rows: auto auto 1fr; padding: 1vh 1.2vw; gap: 0.8vh; }
+
+  /* HEADER & KPIs */
+  .hdr { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.6vh; }
+  .hdr-title { font-size: 2vh; font-weight: 800; letter-spacing: 0.5px; color: #fff; }
+  .hdr-title span { color: #f97316; }
+  .hdr-right { display: flex; align-items: center; gap: 2vw; }
+  .hdr-badge { font-size: 1.2vh; background: rgba(249,115,22,0.15); color: #f97316; padding: 0.2vh 0.8vw; border-radius: 20px; font-weight: 600; }
+  .clock { font-size: 2.2vh; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .date-str { font-size: 1.1vh; color: #666; text-align: right; }
+  
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1vw; }
+  .kpi { background: #141428; border-radius: 0.6vh; padding: 1vh 1.2vw; border-left: 0.4vw solid; display: flex; flex-direction: column; justify-content: center; }
+  .kpi-num { font-size: 3.2vh; font-weight: 900; line-height: 1; }
+  .kpi-lbl { font-size: 1.1vh; color: #777; margin-top: 0.3vh; text-transform: uppercase; letter-spacing: 0.4px; }
+  .kpi.g { border-color: #22c55e; } .kpi.g .kpi-num { color: #22c55e; }
+  .kpi.r { border-color: #ef4444; } .kpi.r .kpi-num { color: #ef4444; }
+  .kpi.b { border-color: #3b82f6; } .kpi.b .kpi-num { color: #3b82f6; }
+  .kpi.o { border-color: #f97316; } .kpi.o .kpi-num { color: #f97316; }
+
+  /* COLUNAS & TABELAS */
+  .main { display: grid; grid-template-columns: 1fr 1fr 1.33fr; gap: 1vw; min-height: 0; overflow: hidden; }
+  .col, .veh-col { background: #141428; border-radius: 0.6vh; padding: 1vh 1vw; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .col-title { font-size: 1.2vh; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #555; padding-bottom: 0.6vh; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.6vh; flex-shrink: 0; }
+  
+  .scroll-table { overflow-y: auto; flex: 1; }
+  .scroll-table::-webkit-scrollbar { width: 4px; }
+  .scroll-table::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+  
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 1vh; text-transform: uppercase; color: #444; padding: 0.3vh 0.4vw; text-align: left; position: sticky; top: 0; background: #141428; z-index: 2; }
+  td { padding: 0.5vh 0.4vw; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 1.2vh; }
+  tr:last-child td { border-bottom: none; }
+  .dot { display: inline-block; width: 0.7vh; height: 0.7vh; border-radius: 50%; margin-right: 0.4vw; vertical-align: middle; }
+  .g-dot { background: #22c55e; } .r-dot { background: #ef4444; }
+  .time-td { font-size: 1.1vh; color: #555; white-space: nowrap; }
+
+  .badge-placa { font-family: monospace; font-size: 1.1vh; font-weight: 700; color: #fff; background: rgba(255,255,255,0.1); padding: 0.15vh 0.4vw; border-radius: 3px; margin-right: 0.5vw; border: 1px solid rgba(255,255,255,0.15); display: inline-block; vertical-align: middle; }
+
+  /* Estilos compactos para nome e telefone */
+  .func-info { display: inline-flex; flex-direction: column; vertical-align: middle; }
+  .func-nome { font-size: 1.2vh; font-weight: 500; line-height: 1.2; }
+  .func-tel { font-size: 1vh; color: #888; line-height: 1.1; }
+  .nao-realizado-container { display: flex; align-items: center; }
+  .nao-realizado-info { display: flex; flex-direction: column; }
+
+  /* LISTA DE VEÍCULOS */
+  .veh-grid-container { flex: 1; overflow-y: auto; min-height: 0; padding-right: 0.2vw; display: flex; flex-direction: column; justify-content: flex-start; }
+  .veh-grid-container::-webkit-scrollbar { width: 4px; }
+  .veh-grid-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+  .veh-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6vh; align-content: start; }
+
+  .vcard { background: #1c1c35; border-radius: 0.5vh; padding: 0.7vh 0.7vw; border-top: 0.3vh solid #333; display: flex; flex-direction: column; justify-content: space-between; gap: 0.4vh; }
+  .vcard.alta { border-top-color: #ef4444; }
+  .vcard.media { border-top-color: #f97316; }
+  .vcard.baixa { border-top-color: #22c55e; }
+  .vcard.none  { border-top-color: #2d2d4a; opacity: 0.7; }
+  
+  .v-header { display: flex; align-items: center; justify-content: space-between; }
+  .vic { font-size: 1.6vh; }
+  .vpl { font-family: monospace; font-size: 1.3vh; font-weight: 900; letter-spacing: 0.4px; color: #fff; display: flex; align-items: center; }
+  .vmd { font-size: 0.9vh; color: #888; text-transform: uppercase; font-weight: 600; line-height: 1; margin-top: 0.2vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  .vpri { display: flex; gap: 0.3vw; justify-content: flex-start; }
+  .vbg { font-size: 1vh; font-weight: 800; padding: 0.1vh 0.3vw; border-radius: 3px; text-align: center; min-width: 1.6vw; }
+  .va { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
+  .vm { background: rgba(249,115,22,0.2); color: #f97316; border: 1px solid rgba(249,115,22,0.4); }
+  .vb { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.4); }
+  .vn { background: rgba(255,255,255,0.03); color: #555; font-size: 0.9vh; font-weight: 600; width: 100%; text-align: center; }
+  
+  .note-legenda { margin-top: 0.6vh; font-size: 1vh; color: #777; padding: 0.4vh 1vw; background: rgba(255,255,255,0.02); border-radius: 0.4vh; flex-shrink: 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="tv">
+  <div class="hdr">
+    <div class="hdr-title">🚛 Painel Operacional &nbsp;<span id="branch-title">Filial Matriz</span></div>
+    <div class="hdr-right">
+      <div class="hdr-badge">API Conectada</div>
+      <div>
+        <div class="clock" id="clk">--:--:--</div>
+        <div class="date-str" id="dte"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi g"><div class="kpi-num">-</div><div class="kpi-lbl">Checklists realizados hoje</div></div>
+    <div class="kpi r"><div class="kpi-num">-</div><div class="kpi-lbl">Funcionários sem checklist</div></div>
+    <div class="kpi b"><div class="kpi-num">-</div><div class="kpi-lbl">Conformidade do dia</div></div>
+    <div class="kpi r"><div class="kpi-num">-</div><div class="kpi-lbl">OS · Prioridade Alta</div></div>
+    <div class="kpi o"><div class="kpi-num">-</div><div class="kpi-lbl">Total OS Abertas</div></div>
+  </div>
+
+  <div class="main">
+    <div class="col">
+      <div class="col-title">✅ Realizaram checklist hoje</div>
+      <div class="scroll-table" id="realizados-tbl">
+        <table><tr><th>Veículo / Funcionário</th><th>Hora</th></tr></table>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-title">❌ Não realizaram checklist</div>
+      <div class="scroll-table" id="nao-realizados-tbl">
+        <table><tr><th>Funcionário</th><th>Último</th></tr></table>
+      </div>
+    </div>
+
+    <div class="veh-col">
+      <div class="col-title">🚗 Frota Completa &amp; OS Abertas</div>
+      <div class="veh-grid-container">
+        <div class="veh-grid" id="vcards">
+          <!-- Grade preenchendo perfeitamente o espaço vertical -->
+        </div>
+      </div>
+      <div class="note-legenda">🟢 Com Checklist Hoje &nbsp;&nbsp;|&nbsp;&nbsp; 🔴 Sem Checklist Hoje</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function tick() {
+  const now = new Date();
+  document.getElementById('clk').textContent = now.toLocaleTimeString('pt-BR');
+  document.getElementById('dte').textContent = now.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+}
+tick(); setInterval(tick, 1000);
+
+async function loadDashboardData() {
+  try {
+    const response = await fetch('/api/dashboard-data');
+    if (!response.ok) throw new Error("Erro na requisição");
+    const data = await response.json();
+
+    if (data.branchName) document.getElementById('branch-title').textContent = data.branchName;
+
+    const kpis = document.querySelectorAll('.kpi-num');
+    if (kpis.length >= 5) {
+      kpis[0].textContent = data.kpis.checklistsHoje;
+      kpis[1].textContent = data.kpis.semChecklist;
+      kpis[2].textContent = `${data.kpis.conformidade}%`;
+      kpis[3].textContent = data.kpis.osAlta;
+      kpis[4].textContent = data.kpis.totalOs;
+    }
+
+    // Tabela: Realizaram Checklist
+    const tblRealizados = document.querySelector('#realizados-tbl table');
+    if (tblRealizados && data.realizaram) {
+      const rows = data.realizaram.map(item => `
+        <tr>
+          <td>
+            ${item.placa !== 'N/A' ? `<span class="badge-placa">${item.placa}</span>` : ''}
+            <div class="func-info">
+              <span class="func-nome">${item.nome}</span>
+              ${item.telefone ? `<span class="func-tel">${item.telefone}</span>` : ''}
+            </div>
+          </td>
+          <td class="time-td">${item.hora}</td>
+        </tr>
+      `).join('');
+      tblRealizados.innerHTML = `<tr><th>Veículo / Funcionário</th><th>Hora</th></tr>` + (rows || `<tr><td colspan="2" style="color:#555">Nenhum até o momento</td></tr>`);
+    }
+
+    // Tabela: Não Realizaram Checklist
+    const tblNaoRealizados = document.querySelector('#nao-realizados-tbl table');
+    if (tblNaoRealizados && data.naoRealizaram) {
+      const rows = data.naoRealizaram.map(item => `
+        <tr>
+          <td>
+            <div class="nao-realizado-container">
+              <span class="dot r-dot"></span>
+              <div class="nao-realizado-info">
+                <span class="func-nome">${item.nome}</span>
+                ${item.telefone ? `<span class="func-tel">${item.telefone}</span>` : ''}
+              </div>
+            </div>
+          </td>
+          <td class="time-td">${item.ultimo}</td>
+        </tr>
+      `).join('');
+      tblNaoRealizados.innerHTML = `<tr><th>Funcionário</th><th>Último</th></tr>` + (rows || `<tr><td colspan="2" style="color:#555">Todos realizaram</td></tr>`);
+    }
+
+    // Cards de Veículos
+    const vcardsContainer = document.getElementById('vcards');
+    if (vcardsContainer && data.veiculos) {
+      const vcardsHTML = data.veiculos.map(v => {
+        let classeCor = 'none';
+        let badges = '';
+
+        if (v.alta > 0) { classeCor = 'alta'; badges += `<span class="vbg va" title="Alta">${v.alta}</span>`; }
+        if (v.media > 0) { if (classeCor === 'none') classeCor = 'media'; badges += `<span class="vbg vm" title="Média">${v.media}</span>`; }
+        if (v.baixa > 0) { if (classeCor === 'none') classeCor = 'baixa'; badges += `<span class="vbg vb" title="Baixa">${v.baixa}</span>`; }
+        if (classeCor === 'none') badges = `<span class="vbg vn">0</span>`;
+
+        let icone = '🚗';
+        const tipoStr = (v.tipo || '').toLowerCase();
+        
+        if (tipoStr.includes('caminh') || tipoStr.includes('Guincho') || tipoStr.includes('reboque') || tipoStr.includes('carreta')) icone = '🚚';
+        else if (tipoStr.includes('moto') || tipoStr.includes('Motocicleta')) icone = '🏍️';
+        else if (tipoStr.includes('bus') || tipoStr.png || tipoStr.includes('onibus') || tipoStr.includes('ônibus')) icone = '🚌';
+        
+        let dotStatus = v.fezHoje ? 'g-dot' : 'r-dot';
+        const modeloHtml = v.modelo ? `<div class="vmd">${v.modelo}</div>` : '';
+
+        return `
+          <div class="vcard ${classeCor}">
+            <div>
+              <div class="v-header">
+                <div class="vpl"><span class="dot ${dotStatus}"></span>${v.placa}</div>
+                <div class="vic">${icone}</div>
+              </div>
+              ${modeloHtml}
+            </div>
+            <div class="vpri">${badges}</div>
+          </div>
+        `;
+      }).join('');
+
+      vcardsContainer.innerHTML = vcardsHTML;
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar o dashboard:', error);
+  }
+}
+
+loadDashboardData();
+setInterval(loadDashboardData, 60000);
+</script>
+</body>
+</html>
