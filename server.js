@@ -9,9 +9,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 // Configurações da API Prolog
-const BASE_URL = 'https://prologapp.com/prolog';
-const BRANCH_OFFICE_ID = ''; // Insira o ID da filial desejada aqui
-const PROLOG_API_TOKEN = ''; // Insira o seu token válido aqui
+const BASE_URL = process.env.PROLOG_BASE_URL || 'https://prologapp.com/prolog';
+const BRANCH_OFFICE_ID = process.env.BRANCH_OFFICE_ID;
+const PROLOG_API_TOKEN = process.env.PROLOG_API_TOKEN;
 
 let cachedDashboardData = null;
 
