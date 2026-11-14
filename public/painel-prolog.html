@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, initial-scale=1">
+<title>Painel Operacional &amp; Controle de KM</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; background: #0d0d1a; color: #e8eaf6; font-family: 'Segoe UI', -apple-system, sans-serif; overflow: hidden; }
@@ -19,18 +20,31 @@
   .clock { font-size: 2.2vh; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
   .date-str { font-size: 1.1vh; color: #666; text-align: right; }
   
-  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1vw; }
-  .kpi { background: #141428; border-radius: 0.6vh; padding: 1vh 1.2vw; border-left: 0.4vw solid; display: flex; flex-direction: column; justify-content: center; }
-  .kpi-num { font-size: 3.2vh; font-weight: 900; line-height: 1; }
-  .kpi-lbl { font-size: 1.1vh; color: #777; margin-top: 0.3vh; text-transform: uppercase; letter-spacing: 0.4px; }
+  /* Grade com 6 KPIs proporcionais */
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.8vw; }
+  .kpi { background: #141428; border-radius: 0.6vh; padding: 0.9vh 1vw; border-left: 0.4vw solid; display: flex; flex-direction: column; justify-content: center; }
+  .kpi-num { font-size: 3vh; font-weight: 900; line-height: 1; }
+  .kpi-lbl { font-size: 1.05vh; color: #777; margin-top: 0.3vh; text-transform: uppercase; letter-spacing: 0.4px; }
+  .kpi-sub { font-size: 0.95vh; color: #999; margin-top: 0.2vh; font-weight: 500; }
   .kpi.g { border-color: #22c55e; } .kpi.g .kpi-num { color: #22c55e; }
   .kpi.r { border-color: #ef4444; } .kpi.r .kpi-num { color: #ef4444; }
   .kpi.b { border-color: #3b82f6; } .kpi.b .kpi-num { color: #3b82f6; }
   .kpi.o { border-color: #f97316; } .kpi.o .kpi-num { color: #f97316; }
+  .kpi.c { border-color: #06b6d4; } .kpi.c .kpi-num { color: #22d3ee; }
 
   /* COLUNAS & TABELAS */
-  .main { display: grid; grid-template-columns: 1fr 1fr 1.33fr; gap: 1vw; min-height: 0; overflow: hidden; }
+  .main { display: grid; grid-template-columns: 1.1fr 0.9fr 1.33fr; gap: 1vw; min-height: 0; overflow: hidden; }
   .col, .veh-col { background: #141428; border-radius: 0.6vh; padding: 1vh 1vw; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  
+  /* Barra de abas da coluna da esquerda */
+  .col-tabs { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.6vh; margin-bottom: 0.6vh; flex-shrink: 0; }
+  .tab-group { display: flex; gap: 0.4vw; }
+  .col-tab { background: transparent; border: 1px solid transparent; color: #666; font-size: 1.15vh; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.3vh 0.6vw; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .col-tab:hover { color: #fff; background: rgba(255,255,255,0.04); }
+  .col-tab.active { color: #f97316; background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
+  .auto-toggle { font-size: 0.95vh; color: #666; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.2vh 0.5vw; border-radius: 3px; cursor: pointer; }
+  .auto-toggle.on { color: #22c55e; border-color: rgba(34,197,94,0.3); }
+
   .col-title { font-size: 1.2vh; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #555; padding-bottom: 0.6vh; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.6vh; flex-shrink: 0; }
   
   .scroll-table { overflow-y: auto; flex: 1; }
@@ -42,17 +56,28 @@
   td { padding: 0.5vh 0.4vw; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 1.2vh; }
   tr:last-child td { border-bottom: none; }
   .dot { display: inline-block; width: 0.7vh; height: 0.7vh; border-radius: 50%; margin-right: 0.4vw; vertical-align: middle; }
-  .g-dot { background: #22c55e; } .r-dot { background: #ef4444; }
+  .g-dot { background: #22c55e; } .r-dot { background: #ef4444; } .y-dot { background: #facc15; }
   .time-td { font-size: 1.1vh; color: #555; white-space: nowrap; }
 
   .badge-placa { font-family: monospace; font-size: 1.1vh; font-weight: 700; color: #fff; background: rgba(255,255,255,0.1); padding: 0.15vh 0.4vw; border-radius: 3px; margin-right: 0.5vw; border: 1px solid rgba(255,255,255,0.15); display: inline-block; vertical-align: middle; }
 
-  /* Estilos compactos para nome e telefone */
+  /* Estilos compactos para nome, telefone e odômetro */
   .func-info { display: inline-flex; flex-direction: column; vertical-align: middle; }
   .func-nome { font-size: 1.2vh; font-weight: 500; line-height: 1.2; }
   .func-tel { font-size: 1vh; color: #888; line-height: 1.1; }
+  .km-tipo-tag { font-size: 0.95vh; color: #06b6d4; font-weight: 600; line-height: 1.1; margin-top: 0.1vh; }
+
   .nao-realizado-container { display: flex; align-items: center; }
   .nao-realizado-info { display: flex; flex-direction: column; }
+
+  /* Estilos da Tabela de KM Diário */
+  .km-flow { display: flex; flex-direction: column; font-size: 1.05vh; color: #888; line-height: 1.2; }
+  .km-flow strong { color: #fff; font-size: 1.15vh; font-family: monospace; }
+  .km-tag-status { display: inline-block; font-size: 0.95vh; font-weight: 800; padding: 0.2vh 0.5vw; border-radius: 3px; text-transform: uppercase; white-space: nowrap; }
+  .km-tag-status.finalizado { background: rgba(34,197,94,0.18); color: #22c55e; border: 1px solid rgba(34,197,94,0.35); }
+  .km-tag-status.em_rota { background: rgba(234,179,8,0.18); color: #facc15; border: 1px solid rgba(234,179,8,0.35); }
+  .km-tag-status.inconsistente { background: rgba(239,68,68,0.18); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); }
+  .km-tag-status.sem_inicial { background: rgba(249,115,22,0.18); color: #f97316; border: 1px solid rgba(249,115,22,0.35); }
 
   /* LISTA DE VEÍCULOS */
   .veh-grid-container { flex: 1; overflow-y: auto; min-height: 0; padding-right: 0.2vw; display: flex; flex-direction: column; justify-content: flex-start; }
@@ -61,25 +86,32 @@
 
   .veh-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6vh; align-content: start; }
 
-  .vcard { background: #1c1c35; border-radius: 0.5vh; padding: 0.7vh 0.7vw; border-top: 0.3vh solid #333; display: flex; flex-direction: column; justify-content: space-between; gap: 0.4vh; }
+  .vcard { background: #1c1c35; border-radius: 0.5vh; padding: 0.65vh 0.7vw; border-top: 0.3vh solid #333; display: flex; flex-direction: column; justify-content: space-between; gap: 0.4vh; }
   .vcard.alta { border-top-color: #ef4444; }
   .vcard.media { border-top-color: #f97316; }
   .vcard.baixa { border-top-color: #22c55e; }
-  .vcard.none  { border-top-color: #2d2d4a; opacity: 0.7; }
+  .vcard.none  { border-top-color: #2d2d4a; opacity: 0.75; }
   
   .v-header { display: flex; align-items: center; justify-content: space-between; }
-  .vic { font-size: 1.6vh; }
-  .vpl { font-family: monospace; font-size: 1.3vh; font-weight: 900; letter-spacing: 0.4px; color: #fff; display: flex; align-items: center; }
-  .vmd { font-size: 0.9vh; color: #888; text-transform: uppercase; font-weight: 600; line-height: 1; margin-top: 0.2vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vic { font-size: 1.5vh; }
+  .vpl { font-family: monospace; font-size: 1.25vh; font-weight: 900; letter-spacing: 0.4px; color: #fff; display: flex; align-items: center; }
+  .vmd { font-size: 0.85vh; color: #888; text-transform: uppercase; font-weight: 600; line-height: 1; margin-top: 0.2vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   
-  .vpri { display: flex; gap: 0.3vw; justify-content: flex-start; }
-  .vbg { font-size: 1vh; font-weight: 800; padding: 0.1vh 0.3vw; border-radius: 3px; text-align: center; min-width: 1.6vw; }
+  .vfooter { display: flex; align-items: center; justify-content: space-between; gap: 0.3vw; margin-top: 0.2vh; }
+  .vpri { display: flex; gap: 0.25vw; justify-content: flex-start; }
+  .vbg { font-size: 0.95vh; font-weight: 800; padding: 0.1vh 0.3vw; border-radius: 3px; text-align: center; min-width: 1.4vw; }
   .va { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
   .vm { background: rgba(249,115,22,0.2); color: #f97316; border: 1px solid rgba(249,115,22,0.4); }
   .vb { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.4); }
-  .vn { background: rgba(255,255,255,0.03); color: #555; font-size: 0.9vh; font-weight: 600; width: 100%; text-align: center; }
-  
-  .note-legenda { margin-top: 0.6vh; font-size: 1vh; color: #777; padding: 0.4vh 1vw; background: rgba(255,255,255,0.02); border-radius: 0.4vh; flex-shrink: 0; text-align: center; }
+  .vn { background: rgba(255,255,255,0.03); color: #555; font-size: 0.85vh; font-weight: 600; width: 1.4vw; text-align: center; }
+
+  /* Tag de KM no Card do Veículo */
+  .vkm-tag { font-size: 0.9vh; font-weight: 800; padding: 0.1vh 0.3vw; border-radius: 3px; white-space: nowrap; }
+  .vkm-done { background: rgba(6,182,212,0.2); color: #22d3ee; border: 1px solid rgba(6,182,212,0.4); }
+  .vkm-route { background: rgba(234,179,8,0.2); color: #facc15; border: 1px solid rgba(234,179,8,0.4); }
+  .vkm-warn { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
+
+  .note-legenda { margin-top: 0.6vh; font-size: 0.95vh; color: #777; padding: 0.4vh 1vw; background: rgba(255,255,255,0.02); border-radius: 0.4vh; flex-shrink: 0; text-align: center; }
 </style>
 </head>
 <body>
@@ -95,42 +127,116 @@
     </div>
   </div>
 
+  <!-- 6 KPIs principais com destaque para Quilometragem Diária -->
   <div class="kpis">
-    <div class="kpi g"><div class="kpi-num">-</div><div class="kpi-lbl">Checklists realizados hoje</div></div>
-    <div class="kpi r"><div class="kpi-num">-</div><div class="kpi-lbl">Funcionários sem checklist</div></div>
-    <div class="kpi b"><div class="kpi-num">-</div><div class="kpi-lbl">Conformidade do dia</div></div>
-    <div class="kpi r"><div class="kpi-num">-</div><div class="kpi-lbl">OS · Prioridade Alta</div></div>
-    <div class="kpi o"><div class="kpi-num">-</div><div class="kpi-lbl">Total OS Abertas</div></div>
+    <div class="kpi g"><div class="kpi-num" id="kpi-checklists">-</div><div class="kpi-lbl">Checklists hoje</div></div>
+    <div class="kpi r"><div class="kpi-num" id="kpi-sem-check">-</div><div class="kpi-lbl">Sem checklist</div></div>
+    <div class="kpi b"><div class="kpi-num" id="kpi-conformidade">-</div><div class="kpi-lbl">Conformidade</div></div>
+    <div class="kpi r"><div class="kpi-num" id="kpi-os-alta">-</div><div class="kpi-lbl">OS · Alta</div></div>
+    <div class="kpi o"><div class="kpi-num" id="kpi-os-total">-</div><div class="kpi-lbl">Total OS</div></div>
+    <div class="kpi c">
+      <div class="kpi-num" id="kpi-km-rodada">-</div>
+      <div class="kpi-lbl">KM Rodada Hoje</div>
+      <div class="kpi-sub" id="kpi-km-sub">0 em rota · 0 concluídos</div>
+    </div>
   </div>
 
   <div class="main">
+    <!-- Coluna 1: Alternância entre Checklists Realizados e Controle de KM -->
     <div class="col">
-      <div class="col-title">✅ Realizaram checklist hoje</div>
-      <div class="scroll-table" id="realizados-tbl">
-        <table><tr><th>Veículo / Funcionário</th><th>Hora</th></tr></table>
+      <div class="col-tabs">
+        <div class="tab-group">
+          <button class="col-tab active" id="tab-btn-checklists" onclick="setLeftTab('checklists')">✅ Checklists Hoje</button>
+          <button class="col-tab" id="tab-btn-km" onclick="setLeftTab('km')">🛣️ KM Diária (<span id="km-count-span">0</span>)</button>
+        </div>
+        <button class="auto-toggle on" id="btn-auto-rotate" onclick="toggleAutoRotate()" title="Alternar visão automaticamente a cada 25 segundos">🔄 Auto: ON</button>
+      </div>
+
+      <!-- Visão 1: Checklists Realizados -->
+      <div class="scroll-table" id="view-checklists">
+        <table id="tbl-realizados">
+          <thead>
+            <tr><th>Veículo / Funcionário</th><th>Hora / Tipo</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="2" style="color:#555">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Visão 2: Controle de Quilometragem Diária -->
+      <div class="scroll-table" id="view-km" style="display: none;">
+        <table id="tbl-km">
+          <thead>
+            <tr>
+              <th>Veículo / Condutor</th>
+              <th>Saída ➔ Retorno</th>
+              <th>KM Rodada</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="3" style="color:#555">Carregando...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
+    <!-- Coluna 2: Não Realizaram Checklist -->
     <div class="col">
       <div class="col-title">❌ Não realizaram checklist</div>
       <div class="scroll-table" id="nao-realizados-tbl">
-        <table><tr><th>Funcionário</th><th>Último</th></tr></table>
+        <table>
+          <thead>
+            <tr><th>Funcionário</th><th>Último</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="2" style="color:#555">Carregando...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
+    <!-- Coluna 3: Frota Completa & Status de OS / KM -->
     <div class="veh-col">
-      <div class="col-title">🚗 Frota Completa &amp; OS Abertas</div>
+      <div class="col-title">🚗 Frota Completa &amp; OS / KM</div>
       <div class="veh-grid-container">
         <div class="veh-grid" id="vcards">
           <!-- Grade preenchendo perfeitamente o espaço vertical -->
         </div>
       </div>
-      <div class="note-legenda">🟢 Com Checklist Hoje &nbsp;&nbsp;|&nbsp;&nbsp; 🔴 Sem Checklist Hoje</div>
+      <div class="note-legenda">🟢 Com Checklist Hoje &nbsp;&nbsp;|&nbsp;&nbsp; 🔴 Sem Checklist &nbsp;&nbsp;|&nbsp;&nbsp; 🛣️ KM Rodada / 🟡 Em rota</div>
     </div>
   </div>
 </div>
 
 <script>
+let currentLeftTab = 'checklists';
+let autoRotate = true;
+let autoRotateInterval = null;
+
+function setLeftTab(tab) {
+  currentLeftTab = tab;
+  const isKm = (tab === 'km');
+  document.getElementById('view-checklists').style.display = isKm ? 'none' : 'block';
+  document.getElementById('view-km').style.display = isKm ? 'block' : 'none';
+  document.getElementById('tab-btn-checklists').classList.toggle('active', !isKm);
+  document.getElementById('tab-btn-km').classList.toggle('active', isKm);
+}
+
+function toggleAutoRotate() {
+  autoRotate = !autoRotate;
+  const btn = document.getElementById('btn-auto-rotate');
+  btn.textContent = autoRotate ? '🔄 Auto: ON' : '⏸️ Auto: OFF';
+  btn.classList.toggle('on', autoRotate);
+}
+
+// Alterna automaticamente a aba da esquerda a cada 25 segundos para exibição contínua em TVs
+setInterval(() => {
+  if (autoRotate) {
+    setLeftTab(currentLeftTab === 'checklists' ? 'km' : 'checklists');
+  }
+}, 25000);
+
 function tick() {
   const now = new Date();
   document.getElementById('clk').textContent = now.toLocaleTimeString('pt-BR');
@@ -146,18 +252,22 @@ async function loadDashboardData() {
 
     if (data.branchName) document.getElementById('branch-title').textContent = data.branchName;
 
-    const kpis = document.querySelectorAll('.kpi-num');
-    if (kpis.length >= 5) {
-      kpis[0].textContent = data.kpis.checklistsHoje;
-      kpis[1].textContent = data.kpis.semChecklist;
-      kpis[2].textContent = `${data.kpis.conformidade}%`;
-      kpis[3].textContent = data.kpis.osAlta;
-      kpis[4].textContent = data.kpis.totalOs;
+    // Atualização dos 6 KPIs
+    if (data.kpis) {
+      document.getElementById('kpi-checklists').textContent = data.kpis.checklistsHoje ?? 0;
+      document.getElementById('kpi-sem-check').textContent = data.kpis.semChecklist ?? 0;
+      document.getElementById('kpi-conformidade').textContent = `${data.kpis.conformidade ?? 0}%`;
+      document.getElementById('kpi-os-alta').textContent = data.kpis.osAlta ?? 0;
+      document.getElementById('kpi-os-total').textContent = data.kpis.totalOs ?? 0;
+      
+      const totalKm = (data.kpis.totalKmRodado ?? 0).toLocaleString('pt-BR');
+      document.getElementById('kpi-km-rodada').textContent = `${totalKm} km`;
+      document.getElementById('kpi-km-sub').textContent = `${data.kpis.veiculosEmRota ?? 0} em rota · ${data.kpis.veiculosFinalizados ?? 0} concluídos`;
     }
 
     // Tabela: Realizaram Checklist
-    const tblRealizados = document.querySelector('#realizados-tbl table');
-    if (tblRealizados && data.realizaram) {
+    const tblRealizadosBody = document.querySelector('#tbl-realizados tbody');
+    if (tblRealizadosBody && data.realizaram) {
       const rows = data.realizaram.map(item => `
         <tr>
           <td>
@@ -165,16 +275,63 @@ async function loadDashboardData() {
             <div class="func-info">
               <span class="func-nome">${item.nome}</span>
               ${item.telefone ? `<span class="func-tel">${item.telefone}</span>` : ''}
+              ${item.kmTipo ? `<span class="km-tipo-tag">🛣️ ${item.kmTipo}</span>` : ''}
             </div>
           </td>
-          <td class="time-td">${item.hora}</td>
+          <td class="time-td">
+            <div>${item.hora}</div>
+            ${item.formName ? `<div style="font-size:0.9vh;color:#666">${item.formName}</div>` : ''}
+          </td>
         </tr>
       `).join('');
-      tblRealizados.innerHTML = `<tr><th>Veículo / Funcionário</th><th>Hora</th></tr>` + (rows || `<tr><td colspan="2" style="color:#555">Nenhum até o momento</td></tr>`);
+      tblRealizadosBody.innerHTML = rows || `<tr><td colspan="2" style="color:#555">Nenhum checklist realizado até o momento</td></tr>`;
+    }
+
+    // Tabela: Controle de KM Diário
+    const kmCountSpan = document.getElementById('km-badge-count');
+    if (kmCountSpan && data.kmControle) kmCountSpan.textContent = data.kmControle.length;
+
+    const tblKmBody = document.querySelector('#tbl-km tbody');
+    if (tblKmBody && data.kmControle) {
+      const rowsKm = data.kmControle.map(k => {
+        let statusBadge = '';
+        if (k.statusKm === 'finalizado') {
+          statusBadge = `<span class="km-tag-status finalizado">+${k.kmRodada.toLocaleString('pt-BR')} km</span>`;
+        } else if (k.statusKm === 'em_rota') {
+          statusBadge = `<span class="km-tag-status em_rota">🟡 Em rota</span>`;
+        } else if (k.statusKm === 'inconsistente') {
+          statusBadge = `<span class="km-tag-status inconsistente" title="KM Final menor que Inicial">⚠️ Inconsistente</span>`;
+        } else if (k.statusKm === 'sem_inicial') {
+          statusBadge = `<span class="km-tag-status sem_inicial" title="Checklist 16607 sem inicial">⚠️ Sem Saída</span>`;
+        }
+
+        const saidaStr = k.kmInicial ? `<strong>${k.kmInicial.toLocaleString('pt-BR')} km</strong> <span style="font-size:0.9vh;color:#777">(${k.horaInicial || ''})</span>` : '<span style="color:#555">—</span>';
+        const retornoStr = k.kmFinal ? `<strong>${k.kmFinal.toLocaleString('pt-BR')} km</strong> <span style="font-size:0.9vh;color:#777">(${k.horaFinal || ''})</span>` : '<span style="color:#eab308">Aguardando...</span>';
+
+        return `
+          <tr>
+            <td>
+              <span class="badge-placa">${k.placa}</span>
+              <div class="func-info">
+                <span class="func-nome">${k.motorista}</span>
+                ${k.telefone ? `<span class="func-tel">${k.telefone}</span>` : ''}
+              </div>
+            </td>
+            <td>
+              <div class="km-flow">
+                <div>Saída: ${saidaStr}</div>
+                <div>Retorno: ${retornoStr}</div>
+              </div>
+            </td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+      tblKmBody.innerHTML = rowsKm || `<tr><td colspan="3" style="color:#555">Nenhum veículo em rota hoje</td></tr>`;
     }
 
     // Tabela: Não Realizaram Checklist
-    const tblNaoRealizados = document.querySelector('#nao-realizados-tbl table');
+    const tblNaoRealizados = document.querySelector('#nao-realizados-tbl tbody');
     if (tblNaoRealizados && data.naoRealizaram) {
       const rows = data.naoRealizaram.map(item => `
         <tr>
@@ -190,10 +347,10 @@ async function loadDashboardData() {
           <td class="time-td">${item.ultimo}</td>
         </tr>
       `).join('');
-      tblNaoRealizados.innerHTML = `<tr><th>Funcionário</th><th>Último</th></tr>` + (rows || `<tr><td colspan="2" style="color:#555">Todos realizaram</td></tr>`);
+      tblNaoRealizados.innerHTML = rows || `<tr><td colspan="2" style="color:#555">Todos os funcionários realizaram</td></tr>`;
     }
 
-    // Cards de Veículos
+    // Cards de Veículos com indicadores de OS e KM
     const vcardsContainer = document.getElementById('vcards');
     if (vcardsContainer && data.veiculos) {
       const vcardsHTML = data.veiculos.map(v => {
@@ -208,12 +365,22 @@ async function loadDashboardData() {
         let icone = '🚗';
         const tipoStr = (v.tipo || '').toLowerCase();
         
-        if (tipoStr.includes('caminh') || tipoStr.includes('Guincho') || tipoStr.includes('reboque') || tipoStr.includes('carreta')) icone = '🚚';
-        else if (tipoStr.includes('moto') || tipoStr.includes('Motocicleta')) icone = '🏍️';
-        else if (tipoStr.includes('bus') || tipoStr.png || tipoStr.includes('onibus') || tipoStr.includes('ônibus')) icone = '🚌';
+        if (tipoStr.includes('caminh') || tipoStr.includes('guincho') || tipoStr.includes('reboque') || tipoStr.includes('carreta')) icone = '🚚';
+        else if (tipoStr.includes('moto') || tipoStr.includes('motocicleta')) icone = '🏍️';
+        else if (tipoStr.includes('bus') || tipoStr.includes('onibus') || tipoStr.includes('ônibus')) icone = '🚌';
         
         let dotStatus = v.fezHoje ? 'g-dot' : 'r-dot';
         const modeloHtml = v.modelo ? `<div class="vmd">${v.modelo}</div>` : '';
+
+        // Badge de Quilometragem no Card
+        let kmCardHtml = '';
+        if (v.statusKm === 'finalizado' && v.kmRodada !== null) {
+          kmCardHtml = `<span class="vkm-tag vkm-done" title="Saída: ${v.kmInicial?.toLocaleString('pt-BR')} km (${v.horaInicial || ''}) | Retorno: ${v.kmFinal?.toLocaleString('pt-BR')} km (${v.horaFinal || ''})">🛣️ +${v.kmRodada.toLocaleString('pt-BR')} km</span>`;
+        } else if (v.statusKm === 'em_rota') {
+          kmCardHtml = `<span class="vkm-tag vkm-route" title="Saída às ${v.horaInicial || ''} com ${v.kmInicial?.toLocaleString('pt-BR')} km">🟡 ${v.kmInicial ? v.kmInicial.toLocaleString('pt-BR') : 'Em rota'}</span>`;
+        } else if (v.statusKm === 'inconsistente') {
+          kmCardHtml = `<span class="vkm-tag vkm-warn" title="KM Final menor que Inicial">⚠️ KM Inválido</span>`;
+        }
 
         return `
           <div class="vcard ${classeCor}">
@@ -224,7 +391,10 @@ async function loadDashboardData() {
               </div>
               ${modeloHtml}
             </div>
-            <div class="vpri">${badges}</div>
+            <div class="vfooter">
+              <div class="vpri">${badges}</div>
+              ${kmCardHtml}
+            </div>
           </div>
         `;
       }).join('');
