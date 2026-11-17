@@ -103,6 +103,21 @@
 
     .note-legenda { margin-top: 0.6vh; font-size: 0.95vh; color: #777; padding: 0.4vh 1vw; background: rgba(255,255,255,0.02); border-radius: 0.4vh; flex-shrink: 0; text-align: center; }
 
+    /* ABAS */
+    .tabs { display: flex; gap: 0.4vw; align-items: stretch; }
+    .tab-btn { font-size: 1.15vh; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; background: #141428; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.5vh; padding: 0.5vh 1vw; cursor: pointer; transition: all 0.2s; }
+    .tab-btn:hover { color: #e8eaf6; }
+    .tab-btn.active { color: #f97316; background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.4); }
+    .tab-count { display: inline-block; min-width: 1.6vh; text-align: center; font-size: 0.95vh; font-weight: 800; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 0 0.4vw; margin-left: 0.3vw; }
+    .tab-btn.active .tab-count { background: rgba(249,115,22,0.25); color: #f97316; }
+    .view { display: none; min-height: 0; }
+    .view.active { display: grid; }
+    #view-operacional.active { grid-template-columns: 1.1fr 0.9fr 1.33fr; }
+    #view-alugados.active { grid-template-columns: 1fr; }
+    .alugado-km-num { font-family: monospace; font-size: 1.3vh; font-weight: 800; color: #e8eaf6; }
+    .alugado-km-hora { font-size: 1vh; color: #555; }
+    .alugado-pendente { color: #eab308; font-size: 1.1vh; font-weight: 600; }
+
     /* TOAST */
     #toast { position: fixed; bottom: 1.5vh; right: 1.5vw; background: #1e1e3a; color: #e8eaf6; border: 1px solid rgba(255,255,255,0.1); padding: 0.8vh 1.2vw; border-radius: 0.5vh; opacity: 0; transition: opacity 0.3s; z-index: 1000; font-size: 1.2vh; }
     #toast.show { opacity: 1; }
@@ -152,8 +167,15 @@
     <div class="kpi b"><div class="kpi-num" id="kpi-func-ativos">-</div><div class="kpi-lbl">👷 Func. Ativos</div></div>
   </div>
 
-  <!-- COLUNAS PRINCIPAIS -->
-  <div class="main">
+  <!-- ABAS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-operacional" onclick="switchTab('operacional')">🚚 Operacional</button>
+    <button class="tab-btn" id="tab-alugados" onclick="switchTab('alugados')">🤝 Alugados<span class="tab-count" id="alugados-count">0</span></button>
+  </div>
+
+  <!-- CONTEÚDO DAS ABAS -->
+  <div class="view active" id="view-operacional">
+    <div class="main">
 
     <!-- COLUNA 1: KM Diária -->
     <div class="col">
@@ -211,7 +233,31 @@
       <div class="note-legenda">🟢 Com Checklist Hoje &nbsp;|&nbsp; 🔴 Sem Checklist &nbsp;|&nbsp; 🛣️ KM Rodada / 🟡 Em rota</div>
     </div>
 
-  </div>
+    </div><!-- /main -->
+  </div><!-- /view-operacional -->
+
+  <!-- ABA: ALUGADOS (somente KM inicial e final) -->
+  <div class="view" id="view-alugados">
+    <div class="col" style="height:100%;">
+      <div class="col-title">🤝 Veículos Alugados — KM Inicial / KM Final (<span id="alugados-count-span">0</span>)</div>
+      <div class="scroll-table">
+        <table id="tbl-alugados">
+          <thead>
+            <tr>
+              <th data-col="0">Veículo / Condutor</th>
+              <th data-col="1">KM Inicial</th>
+              <th data-col="2">KM Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="3" style="color:#555">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note-legenda">Exibe apenas veículos do tipo <strong>ALUGADO</strong>. KM Inicial = checklist de saída · KM Final = checklist de retorno.</div>
+    </div>
+  </div><!-- /view-alugados -->
+
 </div>
 
 <div id="toast"></div>
@@ -247,6 +293,16 @@ function vehicleIcon(tipo) {
   if (t.includes('moto')) return '🏍️';
   if (t.includes('bus') || t.includes('ônibus') || t.includes('onibus')) return '🚌';
   return '🚗';
+}
+
+// ─── ABAS (Operacional / Alugados) ─────────────────────────────
+let currentTab = 'operacional';
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-operacional').classList.toggle('active', tab === 'operacional');
+  document.getElementById('tab-alugados').classList.toggle('active', tab === 'alugados');
+  document.getElementById('view-operacional').classList.toggle('active', tab === 'operacional');
+  document.getElementById('view-alugados').classList.toggle('active', tab === 'alugados');
 }
 
 // ─── RELÓGIO ───────────────────────────────────────────────────
@@ -307,7 +363,7 @@ function sortTable(tableId, colIndex) {
 }
 
 // Attach listeners após DOM estar pronto
-['tbl-km', 'tbl-nao-realizados'].forEach(id => {
+['tbl-km', 'tbl-nao-realizados', 'tbl-alugados'].forEach(id => {
   const tbl = document.getElementById(id);
   if (!tbl) return;
   tbl.querySelectorAll('th').forEach((th, i) => {
@@ -363,13 +419,14 @@ async function loadDashboardData() {
       document.getElementById('kpi-func-ativos').textContent = data.kpis.funcionariosAtivos    ?? 0;
     }
 
-    // ── TABELA KM DIÁRIA ──
+    // ── TABELA KM DIÁRIA (apenas frota própria; alugados têm aba própria) ──
     if (Array.isArray(data.kmControle)) {
-      document.getElementById('km-count-span').textContent = data.kmControle.length;
+      const kmProprios = data.kmControle.filter(k => !k.alugado);
+      document.getElementById('km-count-span').textContent = kmProprios.length;
       const tbody = document.querySelector('#tbl-km tbody');
-      tbody.innerHTML = data.kmControle.length === 0
+      tbody.innerHTML = kmProprios.length === 0
         ? '<tr><td colspan="3" style="color:#555">Nenhum veículo em rota hoje</td></tr>'
-        : data.kmControle.map(k => {
+        : kmProprios.map(k => {
             let badge = '';
             if      (k.statusKm === 'finalizado')   badge = `<span class="km-tag-status finalizado">+${(k.kmRodada ?? 0).toLocaleString('pt-BR')} km</span>`;
             else if (k.statusKm === 'em_rota')       badge = `<span class="km-tag-status em_rota">🟡 Em rota</span>`;
@@ -434,10 +491,46 @@ async function loadDashboardData() {
           }).join('');
     }
 
+    // ── TABELA ALUGADOS (somente KM inicial e KM final) ──
+    if (Array.isArray(data.alugados)) {
+      document.getElementById('alugados-count').textContent = data.alugados.length;
+      document.getElementById('alugados-count-span').textContent = data.alugados.length;
+      const tbody = document.querySelector('#tbl-alugados tbody');
+      tbody.innerHTML = data.alugados.length === 0
+        ? '<tr><td colspan="3" style="color:#555">Nenhum veículo alugado com checklist hoje</td></tr>'
+        : data.alugados.map(a => {
+            const link = waLink(a.telefone);
+            const telHtml = link
+              ? `<a href="${link}" class="func-tel" target="_blank">📱 ${a.telefone}</a>`
+              : '';
+
+            const kmIni = a.kmInicial != null
+              ? `<span class="alugado-km-num">${a.kmInicial.toLocaleString('pt-BR')} km</span> <span class="alugado-km-hora">(${a.horaInicial || ''})</span>`
+              : '<span class="alugado-pendente">Aguardando saída...</span>';
+            const kmFim = a.kmFinal != null
+              ? `<span class="alugado-km-num">${a.kmFinal.toLocaleString('pt-BR')} km</span> <span class="alugado-km-hora">(${a.horaFinal || ''})</span>`
+              : '<span class="alugado-pendente">Aguardando retorno...</span>';
+
+            return `<tr>
+              <td>
+                <div class="motorista-bloco">
+                  <div class="motorista-linha1">
+                    <span class="badge-placa">${a.placa}</span>
+                    <span class="func-nome" title="${a.motorista}">${a.motorista}</span>
+                  </div>
+                  ${telHtml}
+                </div>
+              </td>
+              <td>${kmIni}</td>
+              <td>${kmFim}</td>
+            </tr>`;
+          }).join('');
+    }
+
     // ── CARDS DE VEÍCULOS ──
     if (Array.isArray(data.veiculos)) {
       const container = document.getElementById('vcards');
-      container.innerHTML = data.veiculos.map(v => {
+      container.innerHTML = data.veiculos.filter(v => !v.alugado).map(v => {
         let classe = 'none';
         if (v.alta  > 0) classe = 'alta';
         else if (v.media > 0) classe = 'media';

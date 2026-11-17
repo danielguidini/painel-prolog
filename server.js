@@ -19,6 +19,16 @@ const PROLOG_API_TOKEN = process.env.PROLOG_API_TOKEN;
 const INITIAL_KM_FORM_IDS = new Set([15810, 15813, 16552]); // Checklists de Saída (Inicial)
 const FINAL_KM_FORM_ID = 16607;                              // Checklist de Encerramento (Final)
 
+// --- TIPO DE VEÍCULO "ALUGADO" ---
+// O tipo é identificado pelo campo type.name / vehicleTypeName vindo da API Prolog.
+// Qualquer tipo que contenha "aluguel/alugado" (ex.: "Alugado", "Locado", "Terceirizado")
+// é tratado como veículo alugado e exibido em aba própria no painel.
+const ALUGADO_TYPE_KEYWORDS = ['alugado', 'aluguel', 'locado', 'locação', 'terceirizado'];
+function isVeiculoAlugado(tipo) {
+  const t = (tipo || '').toLowerCase();
+  return ALUGADO_TYPE_KEYWORDS.some(k => t.includes(k));
+}
+
 // --- LÓGICA ÚNICA DE CÁLCULO DE KM (deduplicada) ---
 // Deriva kmInicial, kmFinal, kmRodada, statusKm e horários a partir dos
 // checklists de saída/retorno acumulados por veículo (veiculosKmMap).
@@ -239,6 +249,17 @@ async function updateDashboardCache() {
     // Mapeia saída (15810, 15813, 16552) e retorno (16607)
     const veiculosKmMap = new Map();
 
+    // Mapa placa -> tipo vindo da frota (vehiclesRes já foi buscado acima),
+    // usado para marcar os veículos ALUGADOS na tabela de KM diário.
+    const rawVehiclesEarly = vehiclesRes.data;
+    const vehiclesListEarly = Array.isArray(rawVehiclesEarly) ? rawVehiclesEarly : (rawVehiclesEarly?.content || rawVehiclesEarly?.items || []);
+    const placaTipoMap = new Map();
+    vehiclesListEarly.forEach(v => {
+      const placa = (v.licensePlate || v.plate || v.placa || '').trim();
+      const tipo = v.type?.name || v.vehicleTypeName || '';
+      if (placa && tipo) placaTipoMap.set(placa, tipo);
+    });
+
     checklistsHoje.forEach(c => {
       const placa = (c.vehicle?.licensePlate || '').trim();
       if (!placa) return;
@@ -247,6 +268,7 @@ async function updateDashboardCache() {
         veiculosKmMap.set(placa, {
           placa,
           modelo: c.vehicle?.modelName || '',
+          tipo: placaTipoMap.get(placa) || c.vehicle?.vehicleTypeName || '',
           initialChecklist: null,
           finalChecklist: null
         });
@@ -254,6 +276,7 @@ async function updateDashboardCache() {
 
       const vKm = veiculosKmMap.get(placa);
       if (!vKm.modelo && c.vehicle?.modelName) vKm.modelo = c.vehicle.modelName;
+      if (!vKm.tipo) vKm.tipo = placaTipoMap.get(placa) || c.vehicle?.vehicleTypeName || '';
 
       const odom = (c.odometerReading !== null && c.odometerReading !== undefined && !isNaN(Number(c.odometerReading))) ? Number(c.odometerReading) : null;
 
@@ -307,6 +330,8 @@ async function updateDashboardCache() {
       kmControleList.push({
         placa,
         modelo: vKm.modelo,
+        tipo: vKm.tipo || '',
+        alugado: isVeiculoAlugado(vKm.tipo),
         motorista,
         telefone,
         ...km
@@ -351,10 +376,12 @@ async function updateDashboardCache() {
     vehiclesList.forEach(v => {
       const placa = (v.licensePlate || v.plate || v.placa || '').trim();
       if (placa) {
+        const tipo = v.type?.name || v.vehicleTypeName || 'car';
         veiculosMap.set(placa, {
           placa: placa,
           modelo: v.model?.name || v.modelName || '',
-          tipo: v.type?.name || v.vehicleTypeName || 'car',
+          tipo,
+          alugado: isVeiculoAlugado(tipo),
           alta: 0,
           media: 0,
           baixa: 0,
@@ -384,22 +411,29 @@ async function updateDashboardCache() {
       const km = getKm(placa);
 
       if (!veiculosMap.has(placa)) {
-        veiculosMap.set(placa, { 
-          placa, 
-          modelo: c.vehicle?.modelName || '', 
-          tipo: c.vehicle?.vehicleTypeName || 'car', 
-          alta: altaIssues, 
-          media: mediaIssues, 
-          baixa: baixaIssues, 
+        const tipo = c.vehicle?.vehicleTypeName || 'car';
+        veiculosMap.set(placa, {
+          placa,
+          modelo: c.vehicle?.modelName || '',
+          tipo,
+          alugado: isVeiculoAlugado(tipo),
+          alta: altaIssues,
+          media: mediaIssues,
+          baixa: baixaIssues,
           fezHoje: placasComChecklistHoje.has(placa),
           ...km
         });
       } else {
         const v = veiculosMap.get(placa);
-        v.alta += altaIssues; 
-        v.media += mediaIssues; 
+        v.alta += altaIssues;
+        v.media += mediaIssues;
         v.baixa += baixaIssues;
         if (!v.modelo && c.vehicle?.modelName) v.modelo = c.vehicle.modelName;
+        // Se o checklist trouxer um tipo "ALUGADO", promove o veículo para a aba de alugados
+        if (!v.alugado && isVeiculoAlugado(c.vehicle?.vehicleTypeName)) {
+          v.alugado = true;
+          v.tipo = c.vehicle.vehicleTypeName;
+        }
         if (placasComChecklistHoje.has(placa)) v.fezHoje = true;
         Object.assign(v, km);
       }
@@ -452,7 +486,21 @@ async function updateDashboardCache() {
         };
       }),
       naoRealizaram: naoRealizaramList,
-      veiculos: Array.from(veiculosMap.values()).sort((a, b) => (b.alta - a.alta) || (b.fezHoje - a.fezHoje))
+      veiculos: Array.from(veiculosMap.values()).sort((a, b) => (b.alta - a.alta) || (b.fezHoje - a.fezHoje)),
+      // Aba "Alugados": somente veículos do tipo ALUGADO, apenas KM inicial e final
+      alugados: kmControleList
+        .filter(k => k.alugado)
+        .map(k => ({
+          placa: k.placa,
+          modelo: k.modelo,
+          motorista: k.motorista,
+          telefone: k.telefone,
+          kmInicial: k.kmInicial,
+          kmFinal: k.kmFinal,
+          horaInicial: k.horaInicial,
+          horaFinal: k.horaFinal
+        }))
+        .sort((a, b) => String(a.placa).localeCompare(String(b.placa)))
     };
 
     console.log(`[${new Date().toLocaleTimeString('pt-BR')}] ✅ Cache atualizada. Total de veículos no painel: ${veiculosMap.size}`);
