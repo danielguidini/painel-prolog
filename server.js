@@ -19,6 +19,41 @@ const PROLOG_API_TOKEN = process.env.PROLOG_API_TOKEN;
 const INITIAL_KM_FORM_IDS = new Set([15810, 15813, 16552]); // Checklists de Saída (Inicial)
 const FINAL_KM_FORM_ID = 16607;                              // Checklist de Encerramento (Final)
 
+// --- LÓGICA ÚNICA DE CÁLCULO DE KM (deduplicada) ---
+// Deriva kmInicial, kmFinal, kmRodada, statusKm e horários a partir dos
+// checklists de saída/retorno acumulados por veículo (veiculosKmMap).
+// Usado em: kmControleList, mapa da frota (vehiclesList) e mapa da frota (checklistsHoje).
+function calcularKmVeiculo(vKm) {
+  const formatHora = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null;
+
+  if (!vKm) {
+    return { kmInicial: null, kmFinal: null, kmRodada: null, statusKm: 'sem_saida', horaInicial: null, horaFinal: null };
+  }
+
+  const kmInicial = vKm.initialChecklist?.odometer ?? null;
+  const kmFinal = vKm.finalChecklist?.odometer ?? null;
+  let kmRodada = null;
+  let statusKm = 'sem_saida';
+
+  if (kmInicial !== null && kmFinal !== null) {
+    kmRodada = kmFinal - kmInicial;
+    statusKm = kmRodada >= 0 ? 'finalizado' : 'inconsistente';
+  } else if (kmInicial !== null) {
+    statusKm = 'em_rota';
+  } else if (kmFinal !== null) {
+    statusKm = 'sem_inicial';
+  }
+
+  return {
+    kmInicial,
+    kmFinal,
+    kmRodada,
+    statusKm,
+    horaInicial: formatHora(vKm.initialChecklist?.submittedAt),
+    horaFinal: formatHora(vKm.finalChecklist?.submittedAt)
+  };
+}
+
 let cachedDashboardData = null;
 
 // --- SISTEMA DE CACHE PERSISTENTE DE USUÁRIOS E TELEFONES ---
@@ -255,25 +290,14 @@ async function updateDashboardCache() {
     const kmControleList = [];
 
     veiculosKmMap.forEach((vKm, placa) => {
-      const kmInicial = vKm.initialChecklist ? vKm.initialChecklist.odometer : null;
-      const kmFinal = vKm.finalChecklist ? vKm.finalChecklist.odometer : null;
-      let kmRodada = null;
-      let statusKm = 'sem_saida';
+      const km = calcularKmVeiculo(vKm);
 
-      if (kmInicial !== null && kmFinal !== null) {
-        kmRodada = kmFinal - kmInicial;
-        if (kmRodada >= 0) {
-          statusKm = 'finalizado';
-          totalKmRodado += kmRodada;
-          veiculosFinalizados++;
-        } else {
-          statusKm = 'inconsistente';
-        }
-      } else if (kmInicial !== null) {
-        statusKm = 'em_rota';
+      // Contadores agregados derivam do status único calculado pela função central
+      if (km.statusKm === 'finalizado') {
+        totalKmRodado += km.kmRodada;
+        veiculosFinalizados++;
+      } else if (km.statusKm === 'em_rota') {
         veiculosEmRota++;
-      } else if (kmFinal !== null) {
-        statusKm = 'sem_inicial';
       }
 
       const motorista = vKm.finalChecklist?.submittedBy || vKm.initialChecklist?.submittedBy || 'Motorista';
@@ -285,12 +309,7 @@ async function updateDashboardCache() {
         modelo: vKm.modelo,
         motorista,
         telefone,
-        kmInicial,
-        horaInicial: vKm.initialChecklist?.submittedAt ? new Date(vKm.initialChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null,
-        kmFinal,
-        horaFinal: vKm.finalChecklist?.submittedAt ? new Date(vKm.finalChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null,
-        kmRodada,
-        statusKm
+        ...km
       });
     });
 
@@ -332,7 +351,6 @@ async function updateDashboardCache() {
     vehiclesList.forEach(v => {
       const placa = (v.licensePlate || v.plate || v.placa || '').trim();
       if (placa) {
-        const kmData = veiculosKmMap.get(placa);
         veiculosMap.set(placa, {
           placa: placa,
           modelo: v.model?.name || v.modelName || '',
@@ -341,21 +359,20 @@ async function updateDashboardCache() {
           media: 0,
           baixa: 0,
           fezHoje: placasComChecklistHoje.has(placa),
-          kmInicial: kmData?.initialChecklist?.odometer ?? null,
-          kmFinal: kmData?.finalChecklist?.odometer ?? null,
-          kmRodada: (kmData?.initialChecklist?.odometer != null && kmData?.finalChecklist?.odometer != null) ? (kmData.finalChecklist.odometer - kmData.initialChecklist.odometer) : null,
-          statusKm: kmData ? (
-            (kmData.initialChecklist && kmData.finalChecklist) 
-              ? (kmData.finalChecklist.odometer >= kmData.initialChecklist.odometer ? 'finalizado' : 'inconsistente')
-              : (kmData.initialChecklist ? 'em_rota' : (kmData.finalChecklist ? 'sem_inicial' : 'sem_saida'))
-          ) : 'sem_saida',
-          horaInicial: kmData?.initialChecklist?.submittedAt ? new Date(kmData.initialChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null,
-          horaFinal: kmData?.finalChecklist?.submittedAt ? new Date(kmData.finalChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null
+          ...calcularKmVeiculo(veiculosKmMap.get(placa))
         });
       }
     });
 
     // --- 2. SOMA AS ANOMALIAS DOS CHECKLISTS AOS VEÍCULOS (SOMENTE HOJE) ---
+    const kmCalculadoCache = new Map();
+    const getKm = (placa) => {
+      if (!kmCalculadoCache.has(placa)) {
+        kmCalculadoCache.set(placa, calcularKmVeiculo(veiculosKmMap.get(placa)));
+      }
+      return kmCalculadoCache.get(placa);
+    };
+
     checklistsHoje.forEach(c => {
       const placa = (c.vehicle?.licensePlate || '').trim();
       if (!placa) return;
@@ -364,15 +381,7 @@ async function updateDashboardCache() {
       const mediaIssues = c.totalNokAlternativesHighPriority || 0;
       const baixaIssues = c.totalIssuesLowPriority || 0;
 
-      const kmData = veiculosKmMap.get(placa);
-      const kmInicial = kmData?.initialChecklist?.odometer ?? null;
-      const kmFinal = kmData?.finalChecklist?.odometer ?? null;
-      const kmRodada = (kmInicial !== null && kmFinal !== null) ? (kmFinal - kmInicial) : null;
-      const statusKm = kmData ? (
-        (kmData.initialChecklist && kmData.finalChecklist)
-          ? (kmFinal >= kmInicial ? 'finalizado' : 'inconsistente')
-          : (kmData.initialChecklist ? 'em_rota' : (kmData.finalChecklist ? 'sem_inicial' : 'sem_saida'))
-      ) : 'sem_saida';
+      const km = getKm(placa);
 
       if (!veiculosMap.has(placa)) {
         veiculosMap.set(placa, { 
@@ -383,12 +392,7 @@ async function updateDashboardCache() {
           media: mediaIssues, 
           baixa: baixaIssues, 
           fezHoje: placasComChecklistHoje.has(placa),
-          kmInicial,
-          kmFinal,
-          kmRodada,
-          statusKm,
-          horaInicial: kmData?.initialChecklist?.submittedAt ? new Date(kmData.initialChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null,
-          horaFinal: kmData?.finalChecklist?.submittedAt ? new Date(kmData.finalChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null
+          ...km
         });
       } else {
         const v = veiculosMap.get(placa);
@@ -397,14 +401,7 @@ async function updateDashboardCache() {
         v.baixa += baixaIssues;
         if (!v.modelo && c.vehicle?.modelName) v.modelo = c.vehicle.modelName;
         if (placasComChecklistHoje.has(placa)) v.fezHoje = true;
-        if (kmData) {
-          v.kmInicial = kmInicial;
-          v.kmFinal = kmFinal;
-          v.kmRodada = kmRodada;
-          v.statusKm = statusKm;
-          v.horaInicial = kmData.initialChecklist?.submittedAt ? new Date(kmData.initialChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null;
-          v.horaFinal = kmData.finalChecklist?.submittedAt ? new Date(kmData.finalChecklist.submittedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null;
-        }
+        Object.assign(v, km);
       }
     });
 
