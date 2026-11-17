@@ -307,6 +307,7 @@ async function updateDashboardCache() {
 
     const naoRealizaramList = operationalUsers
       .filter(u => !usuariosComChecklistHojeSet.has(u.id))
+      .filter(u => userLastChecklistMap.has(u.id)) // oculta quem NUNCA fez checklist
       .map(u => {
         const lastDateIso = userLastChecklistMap.get(u.id);
         let ultimoStr = '—';
@@ -427,7 +428,10 @@ async function updateDashboardCache() {
         totalOs: (totalAlta + totalMedia + totalBaixa),
         totalKmRodado,
         veiculosEmRota,
-        veiculosFinalizados
+        veiculosFinalizados,
+        veiculosSemChecklist: vehiclesList.length - placasComChecklistHoje.size,
+        mediaKmPorVeiculo: veiculosFinalizados > 0 ? Math.round(totalKmRodado / veiculosFinalizados) : 0,
+        funcionariosAtivos: operationalUsers.length
       },
       kmControle: kmControleList.sort((a, b) => {
         const prioridade = { em_rota: 1, finalizado: 2, inconsistente: 3, sem_inicial: 4, sem_saida: 5 };
