@@ -15,6 +15,148 @@ const BASE_URL = process.env.PROLOG_BASE_URL || 'https://prologapp.com/prolog';
 const BRANCH_OFFICE_ID = process.env.BRANCH_OFFICE_ID;
 const PROLOG_API_TOKEN = process.env.PROLOG_API_TOKEN;
 
+// Configurações da API SmartGPS
+const SMARTGPS_BASE_URL = process.env.SMARTGPS_BASE_URL || 'https://web.smartgps.com.br';
+const SMARTGPS_API_HASH = process.env.SMARTGPS_API_HASH || '';
+let currentGpsHash = SMARTGPS_API_HASH;
+const SMARTGPS_EMAIL = process.env.SMARTGPS_EMAIL || '';
+const SMARTGPS_PASSWORD = process.env.SMARTGPS_PASSWORD || '';
+
+// Função auxiliar para normalizar placa (remove traços, espaços e caracteres especiais)
+function normalizePlate(plate) {
+  if (!plate) return '';
+  return String(plate).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Cache de dados de telemetria SmartGPS
+let lastSmartGpsMap = new Map();
+let lastSmartGpsFetch = 0;
+const SMARTGPS_CACHE_TTL_MS = 25 * 1000; // 25s
+
+async function ensureSmartGpsAuth() {
+  if (currentGpsHash) return currentGpsHash;
+  if (SMARTGPS_EMAIL && SMARTGPS_PASSWORD) {
+    try {
+      const cleanUrl = `${SMARTGPS_BASE_URL.replace(/\/+$/, '')}/api/login`;
+      const res = await axios.post(cleanUrl, {
+        email: SMARTGPS_EMAIL,
+        password: SMARTGPS_PASSWORD
+      }, { timeout: 10000 });
+      if (res.data?.status === 1 && res.data?.user_api_hash) {
+        currentGpsHash = res.data.user_api_hash;
+        console.log('[SmartGPS] 🔑 Login realizado com sucesso via API! Hash obtido.');
+        return currentGpsHash;
+      }
+    } catch (err) {
+      console.warn('[SmartGPS] Aviso ao autenticar via e-mail/senha:', err.response?.data?.message || err.message);
+    }
+  }
+  return null;
+}
+
+async function getSmartGpsDevicesMap() {
+  const hash = await ensureSmartGpsAuth();
+  if (!hash) {
+    return lastSmartGpsMap;
+  }
+  if (Date.now() - lastSmartGpsFetch < SMARTGPS_CACHE_TTL_MS && lastSmartGpsMap.size > 0) {
+    return lastSmartGpsMap;
+  }
+  try {
+    const cleanUrl = `${SMARTGPS_BASE_URL.replace(/\/+$/, '')}/api/get_devices`;
+    const res = await axios.get(cleanUrl, {
+      params: {
+        user_api_hash: hash,
+        ungrouped: 1,
+        per_page: 50
+      },
+      timeout: 10000
+    });
+
+    let items = [];
+    if (Array.isArray(res.data?.items?.data)) {
+      items = res.data.items.data;
+    } else if (Array.isArray(res.data?.items)) {
+      items = res.data.items;
+    } else if (Array.isArray(res.data)) {
+      // Suporta array de grupos ou lista direta
+      if (res.data.length > 0 && Array.isArray(res.data[0]?.items)) {
+        items = res.data.flatMap(g => g.items || []);
+      } else {
+        items = res.data;
+      }
+    }
+
+    const newMap = new Map();
+    items.forEach(d => {
+      // 1. Busca placa no campo direto ou aninhado
+      const rawPlate = d.plate_number || d.plate || d.device_data?.plate_number || d.device_data?.plate || '';
+      let normPlate = normalizePlate(rawPlate);
+
+      // 2. Fallback: se não veio em plate_number, tenta extrair do nome do dispositivo
+      if (!normPlate && d.name) {
+        const match = d.name.toUpperCase().match(/[A-Z]{3}-?[0-9][A-Z0-9][0-9]{2}/);
+        if (match) normPlate = normalizePlate(match[0]);
+      }
+
+      if (normPlate) {
+        const rawLat = (d.lat !== '-' && d.lat !== undefined && d.lat !== null) ? d.lat : (d.position?.lat ?? d.device_data?.lat);
+        const rawLng = (d.lng !== '-' && d.lng !== undefined && d.lng !== null) ? d.lng : (d.position?.lng ?? d.device_data?.lng);
+        const rawSpeed = (d.speed !== '-' && d.speed !== undefined && d.speed !== null) ? d.speed : (d.position?.speed ?? d.device_data?.speed);
+
+        const lat = (rawLat !== null && rawLat !== undefined && rawLat !== '-' && !isNaN(Number(rawLat))) ? Number(rawLat) : null;
+        const lng = (rawLng !== null && rawLng !== undefined && rawLng !== '-' && !isNaN(Number(rawLng))) ? Number(rawLng) : null;
+        const speed = (rawSpeed !== null && rawSpeed !== undefined && rawSpeed !== '-' && !isNaN(Number(rawSpeed))) ? Math.round(Number(rawSpeed)) : 0;
+
+        // Determinação inteligente de status online/offline
+        let isOnline = (d.online === 'online' || d.online === 1 || d.online === true || d.online === '1' || d.conn === 'online');
+        const isOffline = (d.online === 'offline' || d.online === 0 || d.online === false || d.online === '0' || d.conn === 'offline');
+        
+        const rawTime = d.time || d.last_communication || d.last_update || d.position?.time;
+        if (!isOnline && !isOffline && rawTime && rawTime !== '-') {
+          const dateUtc = new Date(String(rawTime).replace(' ', 'T') + 'Z');
+          if (!isNaN(dateUtc.getTime())) {
+            const diffMin = Math.round((Date.now() - dateUtc.getTime()) / 60000);
+            if (diffMin <= 20 || speed > 0) {
+              isOnline = true;
+            }
+          }
+        }
+        const status = isOnline ? 'online' : 'offline';
+
+        newMap.set(normPlate, {
+          id: d.id,
+          imei: d.imei || d.device_data?.imei || '',
+          name: d.name || '',
+          online: status,
+          speed,
+          lat,
+          lng,
+          lastUpdate: rawTime && rawTime !== '-' ? rawTime : null,
+          mapsUrl: (lat !== null && lng !== null) ? `https://www.google.com/maps?q=${lat},${lng}` : null,
+          wazeUrl: (lat !== null && lng !== null) ? `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes` : null
+        });
+      }
+    });
+
+    lastSmartGpsMap = newMap;
+    lastSmartGpsFetch = Date.now();
+    console.log(`[SmartGPS] 📡 Sincronizados ${newMap.size} dispositivos GPS.`);
+    return newMap;
+  } catch (err) {
+    if (err.response?.status === 401) {
+      console.warn('[SmartGPS] ⚠️ Erro 401: Token/Hash inválido no SmartGPS.');
+      // Se tiver credenciais de login, reseta o hash para tentar novo login na próxima
+      if (SMARTGPS_EMAIL && SMARTGPS_PASSWORD) {
+        currentGpsHash = '';
+      }
+    } else {
+      console.warn('[SmartGPS] Falha ao consultar SmartGPS:', err.response?.status || err.message);
+    }
+    return lastSmartGpsMap;
+  }
+}
+
 // IDs dos formulários para controle de KM diário
 const INITIAL_KM_FORM_IDS = new Set([15810, 15813, 16552]); // Checklists de Saída (Inicial)
 const FINAL_KM_FORM_ID = 16607;                              // Checklist de Encerramento (Final)
@@ -166,11 +308,12 @@ async function updateDashboardCache() {
           })
       : Promise.resolve({ data: { content: cachedUsersList } });
 
-    const [branchRes, usersRes, checklistsRes, vehiclesRes] = await Promise.all([
+    const [branchRes, usersRes, checklistsRes, vehiclesRes, smartGpsMap] = await Promise.all([
       axios.get(`${BASE_URL}/api/v3/branch-offices/${BRANCH_OFFICE_ID}`, { headers }).catch(err => { console.error('[ERRO Filial]', err.response?.status || err.message); return { data: null }; }),
       usersPromise,
       axios.get(`${BASE_URL}/api/v3/checklists`, { headers, params: { branchOfficesId: BRANCH_OFFICE_ID, startDate: startDate30Days, endDate: endDateToday, includeAnswers: true, pageSize: 100, pageNumber: 0 } }).catch(err => { console.error('[ERRO Checklists]', err.response?.status || err.message); return { data: null }; }),
-      axios.get(`${BASE_URL}/api/v3/vehicles`, { headers, params: { branchOfficesId: BRANCH_OFFICE_ID, active: true, pageSize: 100, pageNumber: 0 } }).catch(err => { console.error('[ERRO Veículos]', err.response?.status || err.message); return { data: null }; })
+      axios.get(`${BASE_URL}/api/v3/vehicles`, { headers, params: { branchOfficesId: BRANCH_OFFICE_ID, active: true, pageSize: 100, pageNumber: 0 } }).catch(err => { console.error('[ERRO Veículos]', err.response?.status || err.message); return { data: null }; }),
+      getSmartGpsDevicesMap()
     ]);
 
     // Se as requisições falharem (ex: rate limit 429), preserva a cache anterior
@@ -303,12 +446,14 @@ async function updateDashboardCache() {
       const motorista = vKm.finalChecklist?.submittedBy || vKm.initialChecklist?.submittedBy || 'Motorista';
       const userId = vKm.finalChecklist?.userId || vKm.initialChecklist?.userId;
       const telefone = userId ? (userPhoneCache.get(userId) || '') : '';
+      const gps = smartGpsMap ? smartGpsMap.get(normalizePlate(placa)) : null;
 
       kmControleList.push({
         placa,
         modelo: vKm.modelo,
         motorista,
         telefone,
+        gps: gps || null,
         ...km
       });
     });
@@ -351,20 +496,20 @@ async function updateDashboardCache() {
     vehiclesList.forEach(v => {
       const placa = (v.licensePlate || v.plate || v.placa || '').trim();
       if (placa) {
+        const gps = smartGpsMap ? smartGpsMap.get(normalizePlate(placa)) : null;
         veiculosMap.set(placa, {
           placa: placa,
           modelo: v.model?.name || v.modelName || '',
           tipo: v.type?.name || v.vehicleTypeName || 'car',
           alta: 0,
-          media: 0,
-          baixa: 0,
           fezHoje: placasComChecklistHoje.has(placa),
+          gps: gps || null,
           ...calcularKmVeiculo(veiculosKmMap.get(placa))
         });
       }
     });
 
-    // --- 2. SOMA AS ANOMALIAS DOS CHECKLISTS AOS VEÍCULOS (SOMENTE HOJE) ---
+    // --- 2. SOMA AS ANOMALIAS DE ALTA PRIORIDADE AOS VEÍCULOS (SOMENTE HOJE) ---
     const kmCalculadoCache = new Map();
     const getKm = (placa) => {
       if (!kmCalculadoCache.has(placa)) {
@@ -378,10 +523,9 @@ async function updateDashboardCache() {
       if (!placa) return;
 
       const altaIssues = (c.totalIssuesCriticalPriority || 0) + (c.totalIssuesHighPriority || 0);
-      const mediaIssues = c.totalNokAlternativesHighPriority || 0;
-      const baixaIssues = c.totalIssuesLowPriority || 0;
 
       const km = getKm(placa);
+      const gps = smartGpsMap ? smartGpsMap.get(normalizePlate(placa)) : null;
 
       if (!veiculosMap.has(placa)) {
         veiculosMap.set(placa, { 
@@ -389,25 +533,23 @@ async function updateDashboardCache() {
           modelo: c.vehicle?.modelName || '', 
           tipo: c.vehicle?.vehicleTypeName || 'car', 
           alta: altaIssues, 
-          media: mediaIssues, 
-          baixa: baixaIssues, 
           fezHoje: placasComChecklistHoje.has(placa),
+          gps: gps || null,
           ...km
         });
       } else {
         const v = veiculosMap.get(placa);
         v.alta += altaIssues; 
-        v.media += mediaIssues; 
-        v.baixa += baixaIssues;
         if (!v.modelo && c.vehicle?.modelName) v.modelo = c.vehicle.modelName;
         if (placasComChecklistHoje.has(placa)) v.fezHoje = true;
+        if (gps && !v.gps) v.gps = gps;
         Object.assign(v, km);
       }
     });
 
-    let totalAlta = 0; let totalMedia = 0; let totalBaixa = 0;
+    let totalAlta = 0;
     Array.from(veiculosMap.values()).forEach(v => {
-      totalAlta += v.alta; totalMedia += v.media; totalBaixa += v.baixa;
+      totalAlta += v.alta;
     });
 
     const totalActiveUsers = operationalUsers.length;
@@ -417,12 +559,16 @@ async function updateDashboardCache() {
 
     cachedDashboardData = {
       branchName,
+      smartGps: {
+        configured: Boolean(currentGpsHash || SMARTGPS_API_HASH || (SMARTGPS_EMAIL && SMARTGPS_PASSWORD)),
+        connected: smartGpsMap ? smartGpsMap.size > 0 : false,
+        totalDevices: smartGpsMap ? smartGpsMap.size : 0
+      },
       kpis: { 
         checklistsHoje: checklistsHoje.length, 
         semChecklist: semChecklistCount, 
         conformidade: conformidadePct, 
         osAlta: totalAlta, 
-        totalOs: (totalAlta + totalMedia + totalBaixa),
         totalKmRodado,
         veiculosEmRota,
         veiculosFinalizados,
