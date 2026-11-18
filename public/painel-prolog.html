@@ -34,7 +34,7 @@
     .kpi.p { border-color: #a855f7; } .kpi.p .kpi-num { color: #c084fc; }
 
     /* LAYOUT PRINCIPAL REORGANIZADO */
-    .main { display: grid; grid-template-columns: 1.35fr 0.85fr 1.4fr; gap: 1vw; min-height: 0; overflow: hidden; }
+    .main { display: grid; grid-template-columns: 1.45fr 0.8fr 1.35fr; gap: 1vw; min-height: 0; overflow: hidden; }
     .col, .veh-col { background: #141428; border-radius: 0.6vh; padding: 1vh 1vw; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
     .col-title { font-size: 1.2vh; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #555; padding-bottom: 0.6vh; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.6vh; flex-shrink: 0; }
 
@@ -61,14 +61,21 @@
     .func-tel { font-size: 1vh; color: #25D366; text-decoration: none; white-space: nowrap; }
     .func-tel:hover { text-decoration: underline; }
 
-    /* KM Diária */
-    .km-flow { display: flex; flex-direction: column; font-size: 1.05vh; color: #888; line-height: 1.4; }
+    /* KM Diária & Auditoria */
+    .km-flow { display: flex; flex-direction: column; font-size: 1.05vh; color: #888; line-height: 1.45; }
     .km-flow strong { color: #e8eaf6; font-family: monospace; }
+    .km-atual-gps { color: #22d3ee; font-weight: 700; font-family: monospace; }
     .km-tag-status { display: inline-block; font-size: 0.95vh; font-weight: 800; padding: 0.2vh 0.5vw; border-radius: 3px; text-transform: uppercase; white-space: nowrap; }
-    .km-tag-status.finalizado  { background: rgba(34,197,94,0.18);  color: #22c55e; border: 1px solid rgba(34,197,94,0.35); }
-    .km-tag-status.em_rota     { background: rgba(234,179,8,0.18);  color: #facc15; border: 1px solid rgba(234,179,8,0.35); }
+    .km-tag-status.finalizado    { background: rgba(34,197,94,0.18);  color: #22c55e; border: 1px solid rgba(34,197,94,0.35); }
+    .km-tag-status.em_rota       { background: rgba(234,179,8,0.18);  color: #facc15; border: 1px solid rgba(234,179,8,0.35); }
     .km-tag-status.inconsistente { background: rgba(239,68,68,0.18); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); }
-    .km-tag-status.sem_inicial { background: rgba(249,115,22,0.18); color: #f97316; border: 1px solid rgba(249,115,22,0.35); }
+    .km-tag-status.sem_inicial   { background: rgba(249,115,22,0.18); color: #f97316; border: 1px solid rgba(249,115,22,0.35); }
+
+    /* Badges de Auditoria KM */
+    .audit-badge { display: inline-block; font-size: 0.88vh; font-weight: 700; padding: 0.15vh 0.45vw; border-radius: 3px; white-space: nowrap; }
+    .audit-badge.ok         { background: rgba(6,182,212,0.15); color: #22d3ee; border: 1px solid rgba(6,182,212,0.35); }
+    .audit-badge.divergente { background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid rgba(239,68,68,0.45); }
+    .audit-badge.sem_gps    { background: rgba(255,255,255,0.05); color: #777; border: 1px solid rgba(255,255,255,0.1); }
 
     /* "Não realizaram" */
     .nao-realizado-container { display: flex; align-items: center; gap: 0.4vw; }
@@ -88,11 +95,11 @@
     .vic { font-size: 1.5vh; }
     .vpl { font-family: monospace; font-size: 1.25vh; font-weight: 900; letter-spacing: 0.4px; color: #fff; display: flex; align-items: center; }
     .vmd { font-size: 0.85vh; color: #888; text-transform: uppercase; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .vfooter { display: flex; align-items: center; justify-content: space-between; gap: 0.3vw; margin-top: 0.2vh; }
+    .vfooter { display: flex; align-items: center; justify-content: space-between; gap: 0.3vw; margin-top: 0.2vh; flex-wrap: wrap; }
     .vpri { display: flex; gap: 0.25vw; }
     .va  { background: rgba(239,68,68,0.2);  color: #ef4444; border: 1px solid rgba(239,68,68,0.4); font-size: 0.88vh; font-weight: 800; padding: 0.1vh 0.4vw; border-radius: 3px; white-space: nowrap; }
     .vok { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.25); font-size: 0.85vh; font-weight: 700; padding: 0.1vh 0.4vw; border-radius: 3px; white-space: nowrap; }
-    .vkm-tag { font-size: 0.9vh; font-weight: 800; padding: 0.1vh 0.3vw; border-radius: 3px; white-space: nowrap; }
+    .vkm-tag { font-size: 0.88vh; font-weight: 800; padding: 0.1vh 0.3vw; border-radius: 3px; white-space: nowrap; }
     .vkm-done  { background: rgba(6,182,212,0.2);  color: #22d3ee; border: 1px solid rgba(6,182,212,0.4); }
     .vkm-route { background: rgba(234,179,8,0.2);  color: #facc15; border: 1px solid rgba(234,179,8,0.4); }
     .vkm-warn  { background: rgba(239,68,68,0.2);  color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
@@ -127,7 +134,7 @@
     .gps-map-btn { font-size: 0.9vh; font-weight: 700; color: #38bdf8; text-decoration: none; background: rgba(56,189,248,0.12); padding: 0.15vh 0.4vw; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25); display: inline-flex; align-items: center; gap: 0.2vw; }
     .gps-map-btn:hover { background: rgba(56,189,248,0.25); text-decoration: none; }
 
-    .gps-motion-tag { font-size: 0.95vh; font-weight: 600; margin-top: 0.2vh; }
+    .gps-motion-tag { font-size: 0.92vh; font-weight: 600; margin-top: 0.15vh; }
     .gps-motion-tag.live { color: #22c55e; }
     .gps-motion-tag.idle { color: #facc15; }
     .gps-motion-tag.offline { color: #ef4444; }
@@ -136,14 +143,10 @@
     .btn-opcoes { font-size: 0.9vh; font-weight: 700; color: #f97316; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); padding: 0.2vh 0.5vw; border-radius: 3px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .btn-opcoes:hover { background: rgba(249,115,22,0.25); color: #fff; }
 
-    /* CARD HOVER & CLIQUE */
-    .vcard { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
-    .vcard:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.3); }
-
     /* MODAL DE OPÇÕES */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 2000; }
     .modal-overlay.open { display: flex; }
-    .modal-card { background: #16162c; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.8vh; width: 92%; max-width: 520px; padding: 1.8vh 1.4vw; box-shadow: 0 10px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 1.2vh; }
+    .modal-card { background: #16162c; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.8vh; width: 92%; max-width: 560px; padding: 1.8vh 1.4vw; box-shadow: 0 10px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 1.1vh; }
     .modal-hdr { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.8vh; }
     .modal-title { font-size: 1.7vh; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.6vw; }
     .modal-close { background: none; border: none; font-size: 2.2vh; color: #888; cursor: pointer; padding: 0.2vh 0.5vw; border-radius: 3px; line-height: 1; }
@@ -183,7 +186,7 @@
     </div>
   </div>
 
-  <!-- KPIs (10 Indicadores Reorganizados) -->
+  <!-- KPIs (10 Indicadores) -->
   <div class="kpis">
     <div class="kpi g"><div class="kpi-num" id="kpi-checklists">-</div><div class="kpi-lbl">Checklists Hoje</div></div>
     <div class="kpi r"><div class="kpi-num" id="kpi-sem-check">-</div><div class="kpi-lbl">Sem Checklist</div></div>
@@ -204,16 +207,16 @@
   <!-- COLUNAS PRINCIPAIS -->
   <div class="main">
 
-    <!-- COLUNA 1: KM Diária -->
+    <!-- COLUNA 1: KM Diária & Auditoria -->
     <div class="col">
-      <div class="col-title">🛣️ KM Diária (<span id="km-count-span">0</span>)</div>
+      <div class="col-title">🛣️ KM Diária &amp; Auditoria GPS (<span id="km-count-span">0</span>)</div>
       <div class="scroll-table">
         <table id="tbl-km">
           <thead>
             <tr>
               <th data-col="0">Veículo / Condutor &amp; GPS</th>
-              <th data-col="1">Saída ➔ Retorno</th>
-              <th data-col="2">KM Rodada &amp; Opções</th>
+              <th data-col="1">Saída ➔ Atual / Retorno</th>
+              <th data-col="2">KM &amp; Auditoria</th>
             </tr>
           </thead>
           <tbody>
@@ -250,8 +253,9 @@
         <select id="statusFilter"
           style="padding:0.4vh 0.6vw;background:#1c1c35;color:#e8eaf6;border:1px solid rgba(255,255,255,0.08);border-radius:0.3vh;font-size:1.1vh;">
           <option value="">Todos os status</option>
-          <option value="em_rota">🟡 Em rota (Prolog)</option>
+          <option value="em_rota">🟡 Em rota (Prolog + GPS)</option>
           <option value="finalizado">✅ Concluído (Prolog)</option>
+          <option value="auditoria_divergente">🚨 Divergência Auditoria KM</option>
           <option value="gps_online">🟢 GPS Online (SmartGPS)</option>
           <option value="gps_movimento">🚗 GPS Em Movimento</option>
           <option value="sem_check_rodando">⚠️ Sem Checklist &amp; Rodando</option>
@@ -260,13 +264,13 @@
       <div class="veh-grid-container">
         <div class="veh-grid" id="vcards"></div>
       </div>
-      <div class="note-legenda">🟢 Com Checklist Hoje &nbsp;|&nbsp; 🔴 Sem Checklist &nbsp;|&nbsp; ⚠️ OS Alta &nbsp;|&nbsp; 🛣️ KM Rodada / 🟡 Em rota &nbsp;|&nbsp; 📡 SmartGPS</div>
+      <div class="note-legenda">🟢 Com Checklist Hoje &nbsp;|&nbsp; 🔴 Sem Checklist &nbsp;|&nbsp; ⚠️ OS Alta &nbsp;|&nbsp; 🛣️ KM Atualizado / Auditoria GPS</div>
     </div>
 
   </div>
 </div>
 
-<!-- MODAL DE OPÇÕES DO CHECKLIST E RASTREAMENTO -->
+<!-- MODAL DE OPÇÕES DO CHECKLIST, AUDITORIA E RASTREAMENTO -->
 <div class="modal-overlay" id="vehicleModal" onclick="if(event.target===this)fecharModal()">
   <div class="modal-card">
     <div class="modal-hdr">
@@ -277,9 +281,9 @@
       <button class="modal-close" onclick="fecharModal()" title="Fechar">&times;</button>
     </div>
 
-    <!-- SEÇÃO CHECKLIST PROLOG -->
+    <!-- SEÇÃO CHECKLIST PROLOG & AUDITORIA -->
     <div class="modal-section">
-      <div class="modal-sec-title">📋 Checklist Operacional (Prolog)</div>
+      <div class="modal-sec-title">📋 Checklist Operacional &amp; Auditoria de KM</div>
       <div class="modal-grid">
         <div>
           <div class="modal-label">Motorista</div>
@@ -290,11 +294,15 @@
           <div class="modal-val" id="modalTelefone">---</div>
         </div>
         <div>
-          <div class="modal-label">Saída</div>
+          <div class="modal-label">Saída (KM Inicial Intacto)</div>
           <div class="modal-val" id="modalSaida">---</div>
         </div>
         <div>
-          <div class="modal-label">Retorno</div>
+          <div class="modal-label">KM Atualizado (Estimado GPS)</div>
+          <div class="modal-val" id="modalKmAtualizado" style="color:#22d3ee">---</div>
+        </div>
+        <div>
+          <div class="modal-label">Retorno (KM Final Checklist)</div>
           <div class="modal-val" id="modalRetorno">---</div>
         </div>
         <div>
@@ -302,8 +310,12 @@
           <div class="modal-val" id="modalStatusRota">---</div>
         </div>
         <div>
-          <div class="modal-label">KM Rodada</div>
-          <div class="modal-val" id="modalKmRodada">---</div>
+          <div class="modal-label">KM Checklist vs KM GPS</div>
+          <div class="modal-val" id="modalComparativoKm">---</div>
+        </div>
+        <div>
+          <div class="modal-label">Resultado Auditoria KM</div>
+          <div class="modal-val" id="modalAuditoriaStatus">---</div>
         </div>
       </div>
     </div>
@@ -361,7 +373,11 @@ function setLoading(show) {
   document.getElementById('loaderOverlay').classList.toggle('show', show);
 }
 
-// Limpa número para WhatsApp (somente dígitos, sem DDI duplicado)
+function formatKm(val) {
+  if (val === null || val === undefined || isNaN(Number(val))) return '—';
+  return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+}
+
 function waLink(tel, mensagem = '') {
   if (!tel || tel === 'Sem número') return null;
   const digits = tel.replace(/\D/g, '');
@@ -370,7 +386,6 @@ function waLink(tel, mensagem = '') {
   return `https://wa.me/${international}${textQuery}`;
 }
 
-// Ícone do veículo baseado no tipo
 function vehicleIcon(tipo) {
   const t = (tipo || '').toLowerCase();
   if (t.includes('caminh') || t.includes('guincho') || t.includes('reboque') || t.includes('carreta')) return '🚚';
@@ -406,7 +421,7 @@ document.getElementById('refreshUsersBtn').addEventListener('click', async () =>
 });
 
 // ─── ORDENAÇÃO DE TABELAS ──────────────────────────────────────
-const sortState = {}; // { tableId: { col, asc } }
+const sortState = {};
 
 function sortTable(tableId, colIndex) {
   const table = document.getElementById(tableId);
@@ -452,6 +467,7 @@ function applyVehicleFilters() {
     const placa  = card.dataset.placa  || '';
     const modelo = card.dataset.modelo || '';
     const cardStatus = card.dataset.status || '';
+    const auditStatus = card.dataset.auditStatus || '';
     const isOnline = card.dataset.gpsOnline === '1';
     const speed = parseInt(card.dataset.gpsSpeed || '0', 10);
     const fezHoje = card.dataset.fezHoje === '1';
@@ -461,6 +477,7 @@ function applyVehicleFilters() {
 
     if (status === 'em_rota') matchStatus = cardStatus === 'em_rota';
     else if (status === 'finalizado') matchStatus = cardStatus === 'finalizado';
+    else if (status === 'auditoria_divergente') matchStatus = auditStatus === 'divergente';
     else if (status === 'gps_online') matchStatus = isOnline;
     else if (status === 'gps_movimento') matchStatus = isOnline && speed > 0;
     else if (status === 'sem_check_rodando') matchStatus = !fezHoje && isOnline && speed > 0;
@@ -471,60 +488,83 @@ function applyVehicleFilters() {
 document.getElementById('searchBox').addEventListener('input', applyVehicleFilters);
 document.getElementById('statusFilter').addEventListener('change', applyVehicleFilters);
 
-// ─── MODAL DE OPÇÕES E DETALHES ────────────────────────────────
+// ─── MODAL DE OPÇÕES, AUDITORIA E DETALHES ─────────────────────
 function abrirDetalhesVeiculo(placaBuscada) {
   if (!latestDashboardData) return;
   const pNorm = (placaBuscada || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  // Procura em kmControle ou na lista geral de veículos
   const kmItem = (latestDashboardData.kmControle || []).find(k => (k.placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === pNorm);
   const vItem  = (latestDashboardData.veiculos || []).find(v => (v.placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === pNorm);
+  const item = kmItem || vItem || {};
 
-  const placa = kmItem?.placa || vItem?.placa || placaBuscada;
-  const modelo = kmItem?.modelo || vItem?.modelo || 'Veículo';
+  const placa = item.placa || placaBuscada;
+  const modelo = item.modelo || 'Veículo';
   const motorista = kmItem?.motorista || (vItem?.fezHoje ? 'Checklist Realizado' : 'Não informado');
   const telefone = kmItem?.telefone || '';
-  const gps = kmItem?.gps || vItem?.gps || null;
+  const gps = item.gps || null;
 
   document.getElementById('modalPlaca').textContent = placa;
   document.getElementById('modalModelo').textContent = modelo;
   document.getElementById('modalMotorista').textContent = motorista;
   document.getElementById('modalTelefone').textContent = telefone || 'Sem telefone';
 
-  const saidaStr = kmItem?.kmInicial != null 
-    ? `${kmItem.kmInicial.toLocaleString('pt-BR')} km (${kmItem.horaInicial || '--:--'})` 
-    : (vItem?.kmInicial != null ? `${vItem.kmInicial.toLocaleString('pt-BR')} km` : '—');
+  // KM Inicial (mantido intacto)
+  const saidaStr = item.kmInicial != null
+    ? `${formatKm(item.kmInicial)} km (${item.horaInicial || '--:--'})`
+    : '—';
   document.getElementById('modalSaida').textContent = saidaStr;
 
-  const retornoStr = kmItem?.kmFinal != null 
-    ? `${kmItem.kmFinal.toLocaleString('pt-BR')} km (${kmItem.horaFinal || '--:--'})` 
-    : (vItem?.kmFinal != null ? `${vItem.kmFinal.toLocaleString('pt-BR')} km` : (kmItem?.statusKm === 'em_rota' ? 'Aguardando encerramento' : '—'));
+  // KM Atualizado (KM Inicial + deslocamento GPS)
+  const kmAtualizadoStr = (item.kmAtualizado != null && item.gpsKmRodado != null)
+    ? `${formatKm(item.kmAtualizado)} km (+${formatKm(item.gpsKmRodado)} km GPS)`
+    : (item.kmInicial != null ? `${formatKm(item.kmInicial)} km (Aguardando GPS)` : '—');
+  document.getElementById('modalKmAtualizado').textContent = kmAtualizadoStr;
+
+  // KM Final
+  const retornoStr = item.kmFinal != null
+    ? `${formatKm(item.kmFinal)} km (${item.horaFinal || '--:--'})`
+    : (item.statusKm === 'em_rota' ? 'Aguardando encerramento' : '—');
   document.getElementById('modalRetorno').textContent = retornoStr;
 
+  // Status da rota
   let statusRota = 'Sem saída';
-  const statusKey = kmItem?.statusKm || vItem?.statusKm;
-  if (statusKey === 'finalizado') statusRota = '✅ Concluído (Retorno realizado)';
-  else if (statusKey === 'em_rota') statusRota = '🟡 Em rota (Checklist inicial)';
-  else if (statusKey === 'inconsistente') statusRota = '⚠️ KM Inconsistente';
-  else if (statusKey === 'sem_inicial') statusRota = '⚠️ Retorno sem inicial';
+  if (item.statusKm === 'finalizado') statusRota = '✅ Concluído (Retorno realizado)';
+  else if (item.statusKm === 'em_rota') statusRota = '🟡 Em rota (Checklist inicial)';
+  else if (item.statusKm === 'inconsistente') statusRota = '⚠️ KM Inconsistente';
+  else if (item.statusKm === 'sem_inicial') statusRota = '⚠️ Retorno sem inicial';
   else if (vItem?.fezHoje) statusRota = '🟢 Checklist realizado';
   document.getElementById('modalStatusRota').textContent = statusRota;
 
-  const kmTotal = kmItem?.kmRodada ?? vItem?.kmRodada;
-  document.getElementById('modalKmRodada').textContent = kmTotal != null ? `+${kmTotal.toLocaleString('pt-BR')} km` : '—';
+  // Comparativo Checklist vs GPS
+  const chkKmTxt = item.kmRodada != null ? `${formatKm(item.kmRodada)} km` : '—';
+  const gpsKmTxt = item.gpsKmRodado != null ? `${formatKm(item.gpsKmRodado)} km` : '—';
+  document.getElementById('modalComparativoKm').textContent = `Checklist: ${chkKmTxt} | GPS: ${gpsKmTxt}`;
+
+  // Resultado Auditoria KM
+  const auditEl = document.getElementById('modalAuditoriaStatus');
+  if (item.auditoriaStatus === 'ok') {
+    const sinal = item.auditoriaDiff >= 0 ? '+' : '';
+    auditEl.innerHTML = `<span style="color:#22c55e">✅ Conforme (Δ ${sinal}${formatKm(item.auditoriaDiff)} km)</span>`;
+  } else if (item.auditoriaStatus === 'divergente') {
+    const sinal = item.auditoriaDiff >= 0 ? '+' : '';
+    auditEl.innerHTML = `<span style="color:#ef4444">🚨 Divergente (Δ ${sinal}${formatKm(item.auditoriaDiff)} km)</span>`;
+  } else if (item.auditoriaStatus === 'em_monitoramento') {
+    auditEl.innerHTML = `<span style="color:#facc15">🟡 Monitorando em rota (+${formatKm(item.gpsKmRodado)} km GPS)</span>`;
+  } else {
+    auditEl.innerHTML = `<span style="color:#888">⚪ Aguardando encerramento / GPS</span>`;
+  }
 
   // SmartGPS Telemetria
   if (gps) {
     const isOnline = gps.online === 'online';
-    document.getElementById('modalGpsStatus').innerHTML = isOnline 
-      ? '<span style="color:#22c55e">🟢 Online (Conectado)</span>' 
+    document.getElementById('modalGpsStatus').innerHTML = isOnline
+      ? '<span style="color:#22c55e">🟢 Online (Conectado)</span>'
       : '<span style="color:#ef4444">🔴 Offline (Desconectado)</span>';
-    
+
     document.getElementById('modalGpsSpeed').textContent = `${gps.speed ?? 0} km/h ${gps.speed > 0 ? '(Em movimento)' : '(Parado)'}`;
     document.getElementById('modalGpsUpdate').textContent = gps.lastUpdate ? new Date(gps.lastUpdate).toLocaleString('pt-BR') : 'Recente';
     document.getElementById('modalGpsCoords').textContent = (gps.lat && gps.lng) ? `${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}` : 'Não disponíveis';
 
-    // Botões de rota
     const mapsBtn = document.getElementById('modalMapsBtn');
     if (gps.mapsUrl) {
       mapsBtn.href = gps.mapsUrl;
@@ -567,7 +607,6 @@ function fecharModal() {
   document.getElementById('vehicleModal').classList.remove('open');
 }
 
-// Fecha com Esc
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') fecharModal();
 });
@@ -615,13 +654,13 @@ async function loadDashboardData() {
       document.getElementById('kpi-em-rota').textContent     = data.kpis.veiculosEmRota       ?? 0;
       document.getElementById('kpi-concluidos').textContent  = data.kpis.veiculosFinalizados   ?? 0;
       document.getElementById('kpi-km-rodada').textContent  = `${(data.kpis.totalKmRodado ?? 0).toLocaleString('pt-BR')} km`;
-      document.getElementById('kpi-km-sub').textContent     = `${data.kpis.veiculosEmRota ?? 0} em rota · ${data.kpis.veiculosFinalizados ?? 0} concluídos`;
+      document.getElementById('kpi-km-sub').textContent     = `${data.kpis.totalKmEmRotaGps ?? 0} km GPS rota · ${data.kpis.totalKmConcluidos ?? 0} km concl.`;
       document.getElementById('kpi-media-km').textContent    = `${(data.kpis.mediaKmPorVeiculo ?? 0).toLocaleString('pt-BR')} km`;
       document.getElementById('kpi-vei-sem-check').textContent = data.kpis.veiculosSemChecklist ?? 0;
       document.getElementById('kpi-os-alta').textContent    = data.kpis.osAlta          ?? 0;
     }
 
-    // ── TABELA KM DIÁRIA (INTEGRADA COM SMARTGPS) ──
+    // ── TABELA KM DIÁRIA & AUDITORIA (INTEGRADA COM SMARTGPS /api/get_history) ──
     if (Array.isArray(data.kmControle)) {
       document.getElementById('km-count-span').textContent = data.kmControle.length;
       const tbody = document.querySelector('#tbl-km tbody');
@@ -629,24 +668,56 @@ async function loadDashboardData() {
         ? '<tr><td colspan="3" style="color:#555">Nenhum veículo em rota hoje</td></tr>'
         : data.kmControle.map(k => {
             let badge = '';
-            if      (k.statusKm === 'finalizado')   badge = `<span class="km-tag-status finalizado">+${(k.kmRodada ?? 0).toLocaleString('pt-BR')} km</span>`;
-            else if (k.statusKm === 'em_rota')       badge = `<span class="km-tag-status em_rota">🟡 Em rota</span>`;
-            else if (k.statusKm === 'inconsistente') badge = `<span class="km-tag-status inconsistente" title="KM Final menor que Inicial">⚠️ Inconsistente</span>`;
-            else if (k.statusKm === 'sem_inicial')   badge = `<span class="km-tag-status sem_inicial" title="Checklist de retorno sem odômetro inicial">⚠️ Sem Saída</span>`;
+            if (k.statusKm === 'finalizado') {
+              badge = `<span class="km-tag-status finalizado">+${formatKm(k.kmRodada)} km</span>`;
+            } else if (k.statusKm === 'em_rota') {
+              const gpsPart = k.gpsKmRodado != null ? ` (+${formatKm(k.gpsKmRodado)} km GPS)` : '';
+              badge = `<span class="km-tag-status em_rota">🟡 Em rota${gpsPart}</span>`;
+            } else if (k.statusKm === 'inconsistente') {
+              badge = `<span class="km-tag-status inconsistente" title="KM Final menor que Inicial">⚠️ Inconsistente</span>`;
+            } else if (k.statusKm === 'sem_inicial') {
+              badge = `<span class="km-tag-status sem_inicial" title="Checklist de retorno sem odômetro inicial">⚠️ Sem Saída</span>`;
+            }
 
-            const saida   = k.kmInicial != null
-              ? `<strong>${k.kmInicial.toLocaleString('pt-BR')} km</strong> <span style="color:#555">(${k.horaInicial || ''})</span>`
+            // Selo de Auditoria de KM (quando há checklist final)
+            let auditHtml = '';
+            if (k.statusKm === 'finalizado' || k.statusKm === 'inconsistente') {
+              if (k.auditoriaStatus === 'ok') {
+                const sinal = k.auditoriaDiff >= 0 ? '+' : '';
+                auditHtml = `<span class="audit-badge ok" title="Checklist: ${formatKm(k.kmRodada)} km vs GPS: ${formatKm(k.gpsKmRodado)} km">✅ Auditado GPS (Δ ${sinal}${formatKm(k.auditoriaDiff)} km)</span>`;
+              } else if (k.auditoriaStatus === 'divergente') {
+                const sinal = k.auditoriaDiff >= 0 ? '+' : '';
+                auditHtml = `<span class="audit-badge divergente" title="Divergência entre odômetro informado (${formatKm(k.kmRodada)} km) e histórico GPS (${formatKm(k.gpsKmRodado)} km)">🚨 Divergência GPS: ${sinal}${formatKm(k.auditoriaDiff)} km</span>`;
+              } else {
+                auditHtml = `<span class="audit-badge sem_gps" title="Histórico GPS indisponível para auditoria">⚪ Sem GPS p/ auditoria</span>`;
+              }
+            }
+
+            // KM Inicial preservado intacto
+            const saida = k.kmInicial != null
+              ? `<strong>${formatKm(k.kmInicial)} km</strong> <span style="color:#555">(${k.horaInicial || ''})</span>`
               : '<span style="color:#555">—</span>';
-            const retorno = k.kmFinal != null
-              ? `<strong>${k.kmFinal.toLocaleString('pt-BR')} km</strong> <span style="color:#555">(${k.horaFinal || ''})</span>`
-              : '<span style="color:#eab308">Aguardando...</span>';
+
+            // Se em rota, exibe o KM Atualizado (KM Inicial + deslocamento GPS); se finalizado, exibe o KM Final
+            let segundaLinhaKm = '';
+            if (k.statusKm === 'em_rota') {
+              if (k.kmAtualizado != null && k.gpsKmRodado != null) {
+                segundaLinhaKm = `<div>Atual (GPS): <span class="km-atual-gps">${formatKm(k.kmAtualizado)} km</span> <span style="color:#22d3ee;font-size:0.95vh">(+${formatKm(k.gpsKmRodado)} km)</span></div>`;
+              } else {
+                segundaLinhaKm = `<div>Retorno: <span style="color:#eab308">Aguardando...</span></div>`;
+              }
+            } else {
+              const retorno = k.kmFinal != null
+                ? `<strong>${formatKm(k.kmFinal)} km</strong> <span style="color:#555">(${k.horaFinal || ''})</span>`
+                : '<span style="color:#eab308">Aguardando...</span>';
+              segundaLinhaKm = `<div>Retorno: ${retorno}</div>`;
+            }
 
             const link = waLink(k.telefone, `Olá ${k.motorista}, contato sobre o veículo ${k.placa}.`);
             const telHtml = link
               ? `<a href="${link}" class="func-tel" target="_blank" onclick="event.stopPropagation()">📱 ${k.telefone}</a>`
               : '';
 
-            // Dados e opções de Telemetria GPS integrados ao checklist
             const gps = k.gps;
             let gpsPill = '<span class="gps-pill none" title="Sem rastreador cadastrado">⚪ Sem GPS</span>';
             let mapBtn = '';
@@ -656,14 +727,13 @@ async function loadDashboardData() {
                 const velText = gps.speed > 0 ? `${gps.speed} km/h` : 'Parado';
                 gpsPill = `<span class="gps-pill online" title="GPS Online • Atualizado: ${gps.lastUpdate || 'Hoje'}"><span class="gps-dot-pulse"></span>${velText}</span>`;
               } else if (gps.online === 'offline') {
-                gpsPill = `<span class="gps-pill offline" title="GPS Offline • Último sinal: ${gps.lastUpdate || '--'}">🔴 Off</span>`;
+                gpsPill = `<span class="gps-pill offline" title="GPS Offline • Último sinal: ${gps.lastUpdate || '--'}">🔴 Offline</span>`;
               }
               if (gps.mapsUrl) {
                 mapBtn = `<a href="${gps.mapsUrl}" target="_blank" class="gps-map-btn" title="Abrir localização no Google Maps" onclick="event.stopPropagation()">📍 Mapa</a>`;
               }
             }
 
-            // Indicador de movimento da rota em tempo real
             let motionInfo = '';
             if (k.statusKm === 'em_rota') {
               if (gps && gps.online === 'online') {
@@ -692,14 +762,15 @@ async function loadDashboardData() {
               <td>
                 <div class="km-flow">
                   <div>Saída: ${saida}</div>
-                  <div>Retorno: ${retorno}</div>
+                  ${segundaLinhaKm}
                   ${motionInfo}
                 </div>
               </td>
               <td>
                 <div class="km-cell-action">
                   ${badge}
-                  <button class="btn-opcoes" onclick="event.stopPropagation(); abrirDetalhesVeiculo('${k.placa}')" title="Ver opções e telemetria completa">⚙️ Opções</button>
+                  ${auditHtml}
+                  <button class="btn-opcoes" onclick="event.stopPropagation(); abrirDetalhesVeiculo('${k.placa}')" title="Ver auditoria e telemetria completa">⚙️ Detalhes</button>
                 </div>
               </td>
             </tr>`;
@@ -747,14 +818,18 @@ async function loadDashboardData() {
         const icon = vehicleIcon(v.tipo);
 
         let kmTag = '';
-        if (v.statusKm === 'finalizado' && v.kmRodada != null)
-          kmTag = `<span class="vkm-tag vkm-done" title="Saída: ${(v.kmInicial ?? 0).toLocaleString('pt-BR')} km (${v.horaInicial || ''}) → Retorno: ${(v.kmFinal ?? 0).toLocaleString('pt-BR')} km (${v.horaFinal || ''})">🛣️ +${v.kmRodada.toLocaleString('pt-BR')} km</span>`;
-        else if (v.statusKm === 'em_rota')
-          kmTag = `<span class="vkm-tag vkm-route" title="Saída às ${v.horaInicial || ''} com ${(v.kmInicial ?? 0).toLocaleString('pt-BR')} km">🟡 ${v.kmInicial ? v.kmInicial.toLocaleString('pt-BR') : 'Em rota'}</span>`;
-        else if (v.statusKm === 'inconsistente')
+        if (v.statusKm === 'finalizado' && v.kmRodada != null) {
+          const auditIcon = v.auditoriaStatus === 'divergente' ? ' 🚨' : (v.auditoriaStatus === 'ok' ? ' ✓' : '');
+          kmTag = `<span class="vkm-tag ${v.auditoriaStatus === 'divergente' ? 'vkm-warn' : 'vkm-done'}" title="Saída: ${formatKm(v.kmInicial)} km (${v.horaInicial || ''}) → Retorno: ${formatKm(v.kmFinal)} km (${v.horaFinal || ''}) | GPS: ${formatKm(v.gpsKmRodado)} km">🛣️ +${formatKm(v.kmRodada)} km${auditIcon}</span>`;
+        } else if (v.statusKm === 'em_rota') {
+          const kmLabel = v.kmAtualizado != null && v.gpsKmRodado != null
+            ? `${formatKm(v.kmAtualizado)} km (+${formatKm(v.gpsKmRodado)})`
+            : (v.kmInicial ? `${formatKm(v.kmInicial)} km` : 'Em rota');
+          kmTag = `<span class="vkm-tag vkm-route" title="Saída às ${v.horaInicial || ''} com ${formatKm(v.kmInicial)} km | Atualizado GPS: ${formatKm(v.kmAtualizado)} km">🟡 ${kmLabel}</span>`;
+        } else if (v.statusKm === 'inconsistente') {
           kmTag = `<span class="vkm-tag vkm-warn">⚠️ KM Inválido</span>`;
+        }
 
-        // Telemetria GPS no card
         let cardGpsPill = '';
         if (v.gps) {
           if (v.gps.online === 'online') {
@@ -775,6 +850,7 @@ async function loadDashboardData() {
 
         return `<div class="vcard ${classe}" 
           data-status="${v.statusKm || ''}" 
+          data-audit-status="${v.auditoriaStatus || ''}"
           data-placa="${v.placa.toLowerCase()}" 
           data-modelo="${(v.modelo || '').toLowerCase()}"
           data-gps-online="${isOnline}"
@@ -799,7 +875,7 @@ async function loadDashboardData() {
         </div>`;
       }).join('');
 
-      applyVehicleFilters(); // reaplica filtros após render
+      applyVehicleFilters();
     }
 
   } catch (e) {
